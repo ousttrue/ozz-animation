@@ -1,11 +1,13 @@
 const std = @import("std");
 const build_ozz = @import("build_ozz.zig");
+const build_glfw = @import("build_glfw.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const ozz = build_ozz.buildOzzAnimation(b, target, optimize);
+    const ozz = build_ozz.build(b, target, optimize);
+    const glfw = build_glfw.build(b, target, optimize);
 
     const exe = b.addExecutable(.{
         .target = target,
@@ -14,6 +16,7 @@ pub fn build(b: *std.Build) void {
         // .root_source_file = b.path(),
     });
     exe.linkLibrary(ozz.lib);
+    exe.linkLibrary(glfw.lib);
     exe.addCSourceFiles(.{
         .files = &.{
             "samples/playback/sample_playback.cc",
@@ -29,36 +32,16 @@ pub fn build(b: *std.Build) void {
             "samples/framework/internal/renderer_impl.cc",
             "samples/framework/internal/shader.cc",
             "samples/framework/internal/shooter.cc",
-            "extern/glfw/lib/win32/win32_dllmain.c",
-            "extern/glfw/lib/win32/win32_enable.c",
-            "extern/glfw/lib/win32/win32_fullscreen.c",
-            "extern/glfw/lib/win32/win32_glext.c",
-            "extern/glfw/lib/win32/win32_init.c",
-            "extern/glfw/lib/win32/win32_joystick.c",
-            "extern/glfw/lib/win32/win32_thread.c",
-            "extern/glfw/lib/win32/win32_time.c",
-            "extern/glfw/lib/win32/win32_window.c",
-            "extern/glfw/lib/enable.c",
-            "extern/glfw/lib/fullscreen.c",
-            "extern/glfw/lib/glext.c",
-            "extern/glfw/lib/image.c",
-            "extern/glfw/lib/init.c",
-            "extern/glfw/lib/input.c",
-            "extern/glfw/lib/joystick.c",
-            "extern/glfw/lib/stream.c",
-            "extern/glfw/lib/tga.c",
-            "extern/glfw/lib/thread.c",
-            "extern/glfw/lib/time.c",
-            "extern/glfw/lib/window.c",
         },
     });
     for (ozz.include_directories) |include| {
         exe.addIncludePath(b.path(include));
     }
+    for (glfw.include_directories) |include| {
+        exe.addIncludePath(b.path(include));
+    }
 
     exe.addIncludePath(b.path("samples"));
-    exe.addIncludePath(b.path("extern/glfw/include"));
-    exe.addIncludePath(b.path("extern/glfw/lib"));
     exe.linkLibCpp();
     exe.linkSystemLibrary("OpenGL32");
     b.installArtifact(exe);

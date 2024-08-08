@@ -1,11 +1,7 @@
 const std = @import("std");
+const CLib = @import("CLib.zig");
 
-pub const CLib = struct {
-    lib: *std.Build.Step.Compile,
-    include_directories: []const []const u8,
-};
-
-pub fn buildOzzAnimation(
+pub fn build(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
