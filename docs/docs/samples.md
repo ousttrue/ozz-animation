@@ -12,4 +12,12 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Animation blending
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/blend/
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/blend/
+
+## Partial animations blending
+
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/partial_blend/
+
+## Additive blending
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/additive/

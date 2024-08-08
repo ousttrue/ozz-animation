@@ -3,8 +3,8 @@ pub const Asset = struct {
     dst: []const u8,
     fn make(comptime name: []const u8) Asset {
         return .{
-            .src = "media/bin/" ++ name ++ ".ozz",
-            .dst = "bin/media/" ++ name ++ ".ozz",
+            .src = "media/bin/" ++ name,
+            .dst = "bin/media/" ++ name,
         };
     }
 };
@@ -24,7 +24,7 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/playback/sample_playback.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("pab_crossarms"),
+            Asset.make("pab_crossarms.ozz"),
         },
     },
     .{
@@ -32,7 +32,7 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/attach/sample_attach.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("pab_walk"),
+            Asset.make("pab_walk.ozz"),
         },
     },
     .{
@@ -40,9 +40,9 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/blend/sample_blend.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("pab_walk"),
-            Asset.make("pab_jog"),
-            Asset.make("pab_run"),
+            Asset.make("pab_walk.ozz"),
+            Asset.make("pab_jog.ozz"),
+            Asset.make("pab_run.ozz"),
         },
     },
     .{
@@ -50,12 +50,21 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/partial_blend/sample_partial_blend.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("pab_walk"),
-            Asset.make("pab_crossarms"),
+            Asset.make("pab_walk.ozz"),
+            Asset.make("pab_crossarms.ozz"),
+        },
+    },
+    .{
+        .name = "additive",
+        .cfiles = &.{"samples/additive/sample_additive.cc"},
+        .assets = &.{
+            SKELETON,
+            Asset.make("pab_walk.ozz"),
+            Asset.make("pab_curl_additive.ozz"),
+            Asset.make("pab_splay_additive.ozz"),
         },
     },
 
-    // add_subdirectory(additive)
     // add_subdirectory(baked)
     // add_subdirectory(foot_ik)
     // add_subdirectory(look_at)
