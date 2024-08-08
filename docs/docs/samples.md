@@ -24,9 +24,22 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Baked physic simulation
 
-- [x] https://guillaumeblanc.github.io/ozz-animation/samples/baked/ 
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/baked/
 
 ## User channels
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/user_channel/
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/user_channel/
 
+## Motion blending
+
+`branch`
+
+- [ ] https://github.com/guillaumeblanc/ozz-animation/tree/feature/motion/samples/motion_playback
+
+## Keyframe reduction
+
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/optimize/
+
+## Offline libraries usage
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/millipede/

@@ -64,7 +64,6 @@ pub const samples = [_]Sample{
             Asset.make("pab_splay_additive.ozz"),
         },
     },
-    // add_subdirectory(baked)
     .{
         .name = "baked",
         .cfiles = &.{"samples/baked/sample_baked.cc"},
@@ -73,7 +72,6 @@ pub const samples = [_]Sample{
             Asset.make("baked_animation.ozz"),
         },
     },
-    // add_subdirectory(user_channel)
     .{
         .name = "user_channel",
         .cfiles = &.{"samples/user_channel/sample_user_channel.cc"},
@@ -83,12 +81,23 @@ pub const samples = [_]Sample{
             Asset.make("robot_track_grasp.ozz"),
         },
     },
+    .{
+        .name = "optimize",
+        .cfiles = &.{"samples/optimize/sample_optimize.cc"},
+        .assets = &.{
+            SKELETON,
+            Asset.make("pab_atlas_raw.ozz"),
+        },
+    },
+    .{
+        .name = "millipede",
+        .cfiles = &.{"samples/millipede/sample_millipede.cc"},
+        .assets = &.{},
+    },
 
     // add_subdirectory(foot_ik)
     // add_subdirectory(look_at)
-    // add_subdirectory(millipede)
     // add_subdirectory(multithread)
-    // add_subdirectory(optimize)
     // add_subdirectory(skinning)
     // add_subdirectory(two_bone_ik)
 };
