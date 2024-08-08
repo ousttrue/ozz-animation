@@ -94,10 +94,25 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/millipede/sample_millipede.cc"},
         .assets = &.{},
     },
+    .{
+        .name = "two_bone_ik",
+        .cfiles = &.{"samples/two_bone_ik/sample_two_bone_ik.cc"},
+        .assets = &.{
+            Asset.make("robot_skeleton.ozz"),
+        },
+    },
+    // add_subdirectory(look_at)
+    .{
+        .name = "look_at",
+        .cfiles = &.{"samples/look_at/sample_look_at.cc"},
+        .assets = &.{
+            SKELETON,
+            Asset.make("pab_crossarms.ozz"),
+            Asset.make("arnaud_mesh.ozz"),
+        },
+    },
 
     // add_subdirectory(foot_ik)
-    // add_subdirectory(look_at)
     // add_subdirectory(multithread)
     // add_subdirectory(skinning)
-    // add_subdirectory(two_bone_ik)
 };

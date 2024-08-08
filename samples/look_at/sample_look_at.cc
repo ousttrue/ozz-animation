@@ -51,12 +51,12 @@ OZZ_OPTIONS_DECLARE_STRING(skeleton,
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/animation.ozz", false)
+                           "media/pab_crossarms.ozz", false)
 
 // Mesh archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(mesh,
                            "Path to the skinned mesh (ozz archive format).",
-                           "media/mesh.ozz", false)
+                           "media/arnaud_mesh.ozz", false)
 
 // Defines IK chain joint names.
 // Joints must be from the same hierarchy (all ancestors of the first joint
@@ -154,7 +154,7 @@ class LookAtSampleApplication : public ozz::sample::Application {
     // parent.
     int previous_joint = ozz::animation::Skeleton::kNoParent;
     for (int i = 0, joint = joints_chain_[0]; i < chain_length_;
-         ++i, previous_joint = joint, joint = joints_chain_[i]) {
+         previous_joint = joint, joint = joints_chain_[i++]) {
       // Setups the model-space matrix of the joint being processed by IK.
       ik_job.joint = &models_[joint];
 

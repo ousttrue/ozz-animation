@@ -42,4 +42,12 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Offline libraries usage
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/millipede/
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/millipede/
+
+## Two bone IK
+
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/two_bone_ik/
+
+## Look-at
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/look_at/
