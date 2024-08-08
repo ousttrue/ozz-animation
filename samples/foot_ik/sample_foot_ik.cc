@@ -55,12 +55,12 @@ OZZ_OPTIONS_DECLARE_STRING(skeleton,
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/animation.ozz", false)
+                           "media/pab_crossarms.ozz", false)
 
 // Mesh archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(mesh,
                            "Path to the skinned mesh (ozz archive format).",
-                           "media/mesh.ozz", false)
+                           "media/arnaud_mesh.ozz", false)
 
 // Mesh archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(floor,
@@ -662,9 +662,10 @@ class FootIKSampleApplication : public ozz::sample::Application {
 
         // Rotation (in euler form)
         _im_gui->DoLabel("Rotation");
-        snprintf(label, sizeof(label), "yaw %.3g", root_yaw_ * ozz::math::kRadianToDegree);
-        moved |=
-            _im_gui->DoSlider(label, -ozz::math::kPi, ozz::math::kPi, &root_yaw_);
+        snprintf(label, sizeof(label), "yaw %.3g",
+                 root_yaw_ * ozz::math::kRadianToDegree);
+        moved |= _im_gui->DoSlider(label, -ozz::math::kPi, ozz::math::kPi,
+                                   &root_yaw_);
 
         // Character position shouldn't be changed after the update. In this
         // case, because UI is updated after "game" update, we need to recompute

@@ -50,4 +50,9 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Look-at
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/look_at/
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/look_at/
+
+## Foot ik
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/foot_ik/
+

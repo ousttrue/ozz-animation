@@ -101,7 +101,6 @@ pub const samples = [_]Sample{
             Asset.make("robot_skeleton.ozz"),
         },
     },
-    // add_subdirectory(look_at)
     .{
         .name = "look_at",
         .cfiles = &.{"samples/look_at/sample_look_at.cc"},
@@ -111,8 +110,17 @@ pub const samples = [_]Sample{
             Asset.make("arnaud_mesh.ozz"),
         },
     },
+    .{
+        .name = "foot_ik",
+        .cfiles = &.{"samples/foot_ik/sample_foot_ik.cc"},
+        .assets = &.{
+            SKELETON,
+            Asset.make("pab_crossarms.ozz"),
+            Asset.make("arnaud_mesh.ozz"),
+            Asset.make("floor.ozz"),
+        },
+    },
 
-    // add_subdirectory(foot_ik)
     // add_subdirectory(multithread)
     // add_subdirectory(skinning)
 };
