@@ -1,8 +1,11 @@
 const std = @import("std");
+const build_ozz = @import("build_ozz.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+
+    const ozz = build_ozz.buildOzzAnimation(b, target, optimize);
 
     const exe = b.addExecutable(.{
         .target = target,
@@ -10,47 +13,11 @@ pub fn build(b: *std.Build) void {
         .name = "ozz-animation",
         // .root_source_file = b.path(),
     });
+    exe.linkLibrary(ozz.lib);
     exe.addCSourceFiles(.{
         .files = &.{
             "samples/playback/sample_playback.cc",
             //
-            "src/base/platform.cc",
-            "src/base/log.cc",
-            "src/base/memory/allocator.cc",
-            "src/base/containers/string_archive.cc",
-            "src/base/io/archive.cc",
-            "src/base/io/stream.cc",
-            "src/base/maths/box.cc",
-            "src/base/maths/simd_math.cc",
-            "src/base/maths/math_archive.cc",
-            "src/base/maths/soa_math_archive.cc",
-            "src/base/maths/simd_math_archive.cc",
-            "src/animation/runtime/animation.cc",
-            "src/animation/runtime/animation_utils.cc",
-            "src/animation/runtime/blending_job.cc",
-            "src/animation/runtime/ik_aim_job.cc",
-            "src/animation/runtime/ik_two_bone_job.cc",
-            "src/animation/runtime/local_to_model_job.cc",
-            "src/animation/runtime/sampling_job.cc",
-            "src/animation/runtime/skeleton.cc",
-            "src/animation/runtime/skeleton_utils.cc",
-            "src/animation/runtime/track.cc",
-            "src/animation/runtime/track_sampling_job.cc",
-            "src/animation/runtime/track_triggering_job.cc",
-            "src/animation/offline/raw_animation.cc",
-            "src/animation/offline/raw_animation_archive.cc",
-            "src/animation/offline/raw_animation_utils.cc",
-            "src/animation/offline/animation_builder.cc",
-            "src/animation/offline/animation_optimizer.cc",
-            "src/animation/offline/additive_animation_builder.cc",
-            "src/animation/offline/raw_skeleton.cc",
-            "src/animation/offline/raw_skeleton_archive.cc",
-            "src/animation/offline/skeleton_builder.cc",
-            "src/animation/offline/raw_track.cc",
-            "src/animation/offline/track_builder.cc",
-            "src/animation/offline/track_optimizer.cc",
-            "src/options/options.cc",
-            "src/geometry/runtime/skinning_job.cc",
             "samples/framework/application.cc",
             "samples/framework/image.cc",
             "samples/framework/profile.cc",
@@ -85,8 +52,10 @@ pub fn build(b: *std.Build) void {
             "extern/glfw/lib/window.c",
         },
     });
-    exe.addIncludePath(b.path("include"));
-    exe.addIncludePath(b.path("src"));
+    for (ozz.include_directories) |include| {
+        exe.addIncludePath(b.path(include));
+    }
+
     exe.addIncludePath(b.path("samples"));
     exe.addIncludePath(b.path("extern/glfw/include"));
     exe.addIncludePath(b.path("extern/glfw/lib"));
