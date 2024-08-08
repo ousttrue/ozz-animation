@@ -73,6 +73,16 @@ pub const samples = [_]Sample{
             Asset.make("baked_animation.ozz"),
         },
     },
+    // add_subdirectory(user_channel)
+    .{
+        .name = "user_channel",
+        .cfiles = &.{"samples/user_channel/sample_user_channel.cc"},
+        .assets = &.{
+            Asset.make("robot_skeleton.ozz"),
+            Asset.make("robot_animation.ozz"),
+            Asset.make("robot_track_grasp.ozz"),
+        },
+    },
 
     // add_subdirectory(foot_ik)
     // add_subdirectory(look_at)
@@ -81,5 +91,4 @@ pub const samples = [_]Sample{
     // add_subdirectory(optimize)
     // add_subdirectory(skinning)
     // add_subdirectory(two_bone_ik)
-    // add_subdirectory(user_channel)
 };

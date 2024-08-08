@@ -24,4 +24,9 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Baked physic simulation
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/baked/ 
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/baked/ 
+
+## User channels
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/user_channel/
+

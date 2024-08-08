@@ -53,16 +53,16 @@ const ozz::math::SimdFloat4 kBoxInitialPosition =
 // Skeleton archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton,
                            "Path to the skeleton (ozz archive format).",
-                           "media/skeleton.ozz", false)
+                           "media/robot_skeleton.ozz", false)
 
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/animation.ozz", false)
+                           "media/robot_animation.ozz", false)
 
 // Track archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(track, "Path to the track (ozz archive format).",
-                           "media/track.ozz", false)
+                           "media/robot_track_grasp.ozz", false)
 
 class UserChannelSampleApplication : public ozz::sample::Application {
  public:
