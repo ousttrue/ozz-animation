@@ -54,5 +54,12 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Foot ik
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/foot_ik/
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/foot_ik/
 
+## Skinning
+
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/skinning/
+
+## Multi-threading
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/multithread/

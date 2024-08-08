@@ -120,7 +120,22 @@ pub const samples = [_]Sample{
             Asset.make("floor.ozz"),
         },
     },
+    .{
+        .name = "skinning",
+        .cfiles = &.{"samples/skinning/sample_skinning.cc"},
+        .assets = &.{
+            Asset.make("ruby_mesh.ozz"),
+            Asset.make("ruby_skeleton.ozz"),
+            Asset.make("ruby_animation.ozz"),
+        },
+    },
 
-    // add_subdirectory(multithread)
-    // add_subdirectory(skinning)
+    .{
+        .name = "multithread",
+        .cfiles = &.{"samples/multithread/sample_multithread.cc"},
+        .assets = &.{
+            SKELETON,
+            Asset.make("pab_walk.ozz"),
+        },
+    },
 };
