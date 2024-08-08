@@ -2,3 +2,6 @@ build/
 build-cc/
 .DS_Store
 prefix/
+
+/zig-out/
+/.zig-cache/
