@@ -3,32 +3,7 @@ const build_ozz = @import("build_ozz.zig");
 const build_glfw = @import("build_glfw.zig");
 const build_framework = @import("build_framework.zig");
 const CLib = @import("CLib.zig");
-
-const Asset = struct {
-    src: []const u8,
-    dst: []const u8,
-};
-const Sample = struct {
-    name: []const u8,
-    cfiles: []const []const u8,
-    assets: []const Asset = &.{},
-};
-const samples = [_]Sample{
-    .{
-        .name = "playback",
-        .cfiles = &.{"samples/playback/sample_playback.cc"},
-        .assets = &.{
-            .{
-                .src = "media/bin/pab_skeleton.ozz",
-                .dst = "bin/media/skeleton.ozz",
-            },
-            .{
-                .src = "media/bin/pab_crossarms.ozz",
-                .dst = "bin/media/animation.ozz",
-            },
-        },
-    },
-};
+const samples = @import("build_samples.zig").samples;
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});

@@ -49,17 +49,17 @@ OZZ_OPTIONS_DECLARE_STRING(skeleton,
 // First animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation1,
                            "Path to the first animation (ozz archive format).",
-                           "media/animation1.ozz", false)
+                           "media/walk.ozz", false)
 
 // Second animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation2,
                            "Path to the second animation (ozz archive format).",
-                           "media/animation2.ozz", false)
+                           "media/jog.ozz", false)
 
 // Third animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation3,
                            "Path to the third animation (ozz archive format).",
-                           "media/animation3.ozz", false)
+                           "media/run.ozz", false)
 
 class BlendSampleApplication : public ozz::sample::Application {
  public:
@@ -247,7 +247,8 @@ class BlendSampleApplication : public ozz::sample::Application {
 
         for (int i = 0; i < kNumLayers; ++i) {
           Sampler& sampler = samplers_[i];
-          std::snprintf(label, sizeof(label), "Weight %d: %.2f", i, sampler.weight);
+          std::snprintf(label, sizeof(label), "Weight %d: %.2f", i,
+                        sampler.weight);
           _im_gui->DoSlider(label, 0.f, 1.f, &sampler.weight, 1.f, manual_);
         }
 

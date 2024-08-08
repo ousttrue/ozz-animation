@@ -49,7 +49,7 @@ OZZ_OPTIONS_DECLARE_STRING(skeleton,
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/animation.ozz", false)
+                           "media/walk.ozz", false)
 
 class AttachSampleApplication : public ozz::sample::Application {
  public:
