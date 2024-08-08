@@ -1,6 +1,8 @@
 const std = @import("std");
 const build_ozz = @import("build_ozz.zig");
 const build_glfw = @import("build_glfw.zig");
+const build_framework = @import("build_framework.zig");
+const CLib = @import("CLib.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -8,40 +10,28 @@ pub fn build(b: *std.Build) void {
 
     const ozz = build_ozz.build(b, target, optimize);
     const glfw = build_glfw.build(b, target, optimize);
+    var libs = [2]*const CLib{ &ozz, &glfw };
+    const framework = build_framework.build(
+        b,
+        target,
+        optimize,
+        &libs,
+    );
 
     const exe = b.addExecutable(.{
         .target = target,
         .optimize = optimize,
         .name = "ozz-animation",
-        // .root_source_file = b.path(),
     });
-    exe.linkLibrary(ozz.lib);
-    exe.linkLibrary(glfw.lib);
+    ozz.link(b, exe);
+    glfw.link(b, exe);
+    framework.link(b, exe);
     exe.addCSourceFiles(.{
         .files = &.{
             "samples/playback/sample_playback.cc",
-            //
-            "samples/framework/application.cc",
-            "samples/framework/image.cc",
-            "samples/framework/profile.cc",
-            "samples/framework/utils.cc",
-            "samples/framework/mesh.cc",
-            "samples/framework/internal/camera.cc",
-            "samples/framework/internal/immediate.cc",
-            "samples/framework/internal/imgui_impl.cc",
-            "samples/framework/internal/renderer_impl.cc",
-            "samples/framework/internal/shader.cc",
-            "samples/framework/internal/shooter.cc",
         },
     });
-    for (ozz.include_directories) |include| {
-        exe.addIncludePath(b.path(include));
-    }
-    for (glfw.include_directories) |include| {
-        exe.addIncludePath(b.path(include));
-    }
 
-    exe.addIncludePath(b.path("samples"));
     exe.linkLibCpp();
     exe.linkSystemLibrary("OpenGL32");
     b.installArtifact(exe);
