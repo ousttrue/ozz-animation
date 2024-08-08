@@ -3,7 +3,7 @@ pub const Asset = struct {
     dst: []const u8,
     fn make(comptime name: []const u8) Asset {
         return .{
-            .src = "media/bin/pab_" ++ name ++ ".ozz",
+            .src = "media/bin/" ++ name ++ ".ozz",
             .dst = "bin/media/" ++ name ++ ".ozz",
         };
     }
@@ -24,7 +24,7 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/playback/sample_playback.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("crossarms"),
+            Asset.make("pab_crossarms"),
         },
     },
     .{
@@ -32,7 +32,7 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/attach/sample_attach.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("walk"),
+            Asset.make("pab_walk"),
         },
     },
     .{
@@ -40,12 +40,20 @@ pub const samples = [_]Sample{
         .cfiles = &.{"samples/blend/sample_blend.cc"},
         .assets = &.{
             SKELETON,
-            Asset.make("walk"),
-            Asset.make("jog"),
-            Asset.make("run"),
+            Asset.make("pab_walk"),
+            Asset.make("pab_jog"),
+            Asset.make("pab_run"),
         },
     },
-    // add_subdirectory(blend)
+    .{
+        .name = "partial_blend",
+        .cfiles = &.{"samples/partial_blend/sample_partial_blend.cc"},
+        .assets = &.{
+            SKELETON,
+            Asset.make("pab_walk"),
+            Asset.make("pab_crossarms"),
+        },
+    },
 
     // add_subdirectory(additive)
     // add_subdirectory(baked)
@@ -54,7 +62,6 @@ pub const samples = [_]Sample{
     // add_subdirectory(millipede)
     // add_subdirectory(multithread)
     // add_subdirectory(optimize)
-    // add_subdirectory(partial_blend)
     // add_subdirectory(skinning)
     // add_subdirectory(two_bone_ik)
     // add_subdirectory(user_channel)

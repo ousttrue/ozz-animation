@@ -47,7 +47,7 @@ OZZ_OPTIONS_DECLARE_STRING(skeleton,
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/crossarms.ozz", false)
+                           "media/pab_crossarms.ozz", false)
 
 class PlaybackSampleApplication : public ozz::sample::Application {
  public:

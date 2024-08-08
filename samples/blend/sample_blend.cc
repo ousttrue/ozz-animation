@@ -49,17 +49,17 @@ OZZ_OPTIONS_DECLARE_STRING(skeleton,
 // First animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation1,
                            "Path to the first animation (ozz archive format).",
-                           "media/walk.ozz", false)
+                           "media/pab_walk.ozz", false)
 
 // Second animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation2,
                            "Path to the second animation (ozz archive format).",
-                           "media/jog.ozz", false)
+                           "media/pab_jog.ozz", false)
 
 // Third animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation3,
                            "Path to the third animation (ozz archive format).",
-                           "media/run.ozz", false)
+                           "media/pab_run.ozz", false)
 
 class BlendSampleApplication : public ozz::sample::Application {
  public:
