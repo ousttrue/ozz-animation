@@ -20,4 +20,8 @@ https://guillaumeblanc.github.io/ozz-animation/samples/
 
 ## Additive blending
 
-- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/additive/
+- [x] https://guillaumeblanc.github.io/ozz-animation/samples/additive/
+
+## Baked physic simulation
+
+- [ ] https://guillaumeblanc.github.io/ozz-animation/samples/baked/ 

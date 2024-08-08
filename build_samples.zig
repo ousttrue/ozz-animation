@@ -64,8 +64,16 @@ pub const samples = [_]Sample{
             Asset.make("pab_splay_additive.ozz"),
         },
     },
-
     // add_subdirectory(baked)
+    .{
+        .name = "baked",
+        .cfiles = &.{"samples/baked/sample_baked.cc"},
+        .assets = &.{
+            Asset.make("baked_skeleton.ozz"),
+            Asset.make("baked_animation.ozz"),
+        },
+    },
+
     // add_subdirectory(foot_ik)
     // add_subdirectory(look_at)
     // add_subdirectory(millipede)
