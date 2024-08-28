@@ -7,6 +7,12 @@ pub fn build(b: *std.Build) void {
     buildToWriteFile(b.default_step, b, target, optimize);
 }
 
+const medias = [_][]const u8{
+    "pab_skeleton.ozz",
+    "pab_crossarms.ozz",
+    "arnaud_mesh.ozz",
+};
+
 fn buildToWriteFile(
     step: *std.Build.Step,
     b: *std.Build,
@@ -23,8 +29,13 @@ fn buildToWriteFile(
         _ = wf.addCopyFile(prefix.path(b, "lib/ozz-animation.lib"), "lib/ozz-animation.lib");
     }
 
-    _ = wf.addCopyFile(b.path("media/bin/pab_skeleton.ozz"), "web/ozz_anim_skeleton.ozz");
-    _ = wf.addCopyFile(b.path("media/bin/pab_crossarms.ozz"), "web/ozz_anim_animation.ozz");
+    const dir = if (target.result.isWasm()) "web" else "bin";
+    for (medias) |media| {
+        _ = wf.addCopyFile(
+            b.path(b.fmt("media/bin/{s}", .{media})),
+            b.fmt("{s}/{s}", .{ dir, media }),
+        );
+    }
 }
 
 fn prefixFromMesonBuild(
