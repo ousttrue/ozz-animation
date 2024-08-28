@@ -8,9 +8,33 @@ pub fn build(b: *std.Build) void {
 }
 
 const medias = [_][]const u8{
-    "pab_skeleton.ozz",
-    "pab_crossarms.ozz",
     "arnaud_mesh.ozz",
+    "arnaud_mesh_4.ozz",
+    "astro_max_animation.ozz",
+    "astro_max_skeleton.ozz",
+    "astro_maya_animation.ozz",
+    "astro_maya_skeleton.ozz",
+    "baked_animation.ozz",
+    "baked_skeleton.ozz",
+    "floor.ozz",
+    "pab_atlas_raw.ozz",
+    "pab_crackhead.ozz",
+    "pab_crackhead_additive.ozz",
+    "pab_crossarms.ozz",
+    "pab_curl_additive.ozz",
+    "pab_jog.ozz",
+    "pab_run.ozz",
+    "pab_skeleton.ozz",
+    "pab_splay_additive.ozz",
+    "pab_walk.ozz",
+    "robot_animation.ozz",
+    "robot_skeleton.ozz",
+    "robot_track_grasp.ozz",
+    "ruby_animation.ozz",
+    "ruby_mesh.ozz",
+    "ruby_skeleton.ozz",
+    "seymour_animation.ozz",
+    "seymour_skeleton.ozz",
 };
 
 fn buildToWriteFile(
