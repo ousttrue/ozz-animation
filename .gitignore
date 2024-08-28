@@ -10,3 +10,6 @@ prefix_*
 # zig
 .zig-cache
 zig-out
+# clangd
+.cache
+builddir

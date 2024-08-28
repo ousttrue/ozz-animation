@@ -68,41 +68,42 @@ fn prefixFromMesonBuild(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) std.Build.LazyPath {
-    const buildtype = if (optimize == .Debug) "debug" else "release";
     const platform = if (target.result.isWasm()) "wasm" else "native";
+    const buildtype = if (optimize == .Debug) "debug" else "release";
 
     const builddir = b.path(b.fmt("build_{s}_{s}", .{ platform, buildtype }));
-    const setup_dir = builddir.getPath(b);
     const prefix = b.path(b.fmt("prefix_{s}_{s}", .{ platform, buildtype }));
     const meson_install = b.addSystemCommand(&.{
         "meson",
         "install",
         "-C",
-        setup_dir,
     });
+    meson_install.addFileArg(builddir);
     step.dependOn(&meson_install.step);
 
-    if (std.fs.openDirAbsolute(setup_dir, .{})) |*dir| {
-        @constCast(dir).close();
-    } else |_| {
-        const meson_setup = b.addSystemCommand(&.{
-            "meson",
-            "setup",
-            setup_dir,
-            "--buildtype",
-            if (optimize == .Debug) "debug" else "release",
-            "--prefix",
-        });
-        meson_setup.addFileArg(prefix);
-        meson_install.step.dependOn(&meson_setup.step);
+    const setup_dir = builddir.getPath(b);
+    // if (std.fs.openDirAbsolute(setup_dir, .{})) |*dir| {
+    //     @constCast(dir).close();
+    // } else |_| {
+    std.debug.print("setup\n", .{});
+    const meson_setup = b.addSystemCommand(&.{
+        "meson",
+        "setup",
+        setup_dir,
+        "--buildtype",
+        if (optimize == .Debug) "debug" else "release",
+        "--prefix",
+    });
+    meson_setup.addFileArg(prefix);
+    meson_install.step.dependOn(&meson_setup.step);
 
-        if (target.result.isWasm()) {
-            // cross-file
-            const ini = writeCrossFile(&meson_setup.step, b);
-            meson_setup.addArg("--cross-file");
-            meson_setup.addFileArg(ini);
-        }
+    if (target.result.isWasm()) {
+        // cross-file
+        const ini = writeCrossFile(&meson_setup.step, b);
+        meson_setup.addArg("--cross-file");
+        meson_setup.addFileArg(ini);
     }
+    // }
 
     return prefix;
 }
@@ -113,7 +114,9 @@ pub fn writeCrossFile(
 ) std.Build.LazyPath {
     const wf = b.addWriteFiles();
     step.dependOn(&wf.step);
-    const dep_emsdk = b.dependency("emsdk-zig", .{}).builder.dependency("emsdk", .{});
+    const emsdk_zig = b.dependency("emsdk-zig", .{});
+    wf.step.dependOn(emsdk_zig.builder.default_step);
+    const dep_emsdk = emsdk_zig.builder.dependency("emsdk", .{});
     const ext: []const u8 = if (builtin.os.tag == .windows) ".bat" else "";
     return wf.add("emsdk.ini", b.fmt(
         \\# wasm.ini
