@@ -1,0 +1,10 @@
+.{
+    .name = "ozz-animation",
+    .version = "0.15.0",
+    .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

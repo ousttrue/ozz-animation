@@ -5,4 +5,9 @@ build-cc/
 # meson tmp
 Makefile
 prefix
+prefix_debug
+prefix_release
 
+# zig
+.zig-cache
+zig-out
