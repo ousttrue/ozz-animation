@@ -18,8 +18,8 @@ fn dllToWriteFile(
     const wf = b.addNamedWriteFiles("meson_build");
     step.dependOn(&wf.step);
     const prefix = prefixFromMesonBuild(&wf.step, b, optimize);
-    _ = wf.addCopyFile(prefix.path(b, "bin/ozz-animation.dll"), "ozz-animation.dll");
-    _ = wf.addCopyFile(prefix.path(b, "lib/ozz-animation.lib"), "ozz-animation.lib");
+    _ = wf.addCopyFile(prefix.path(b, "bin/ozz-animation.dll"), "bin/ozz-animation.dll");
+    _ = wf.addCopyFile(prefix.path(b, "lib/ozz-animation.lib"), "lib/ozz-animation.lib");
 }
 
 fn prefixFromMesonBuild(
