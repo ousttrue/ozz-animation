@@ -6,5 +6,10 @@
         "build.zig",
         "build.zig.zon",
         "src",
+        "include",
+        "samples",
+        "meson.build",
+        "ozz_wrap.cpp",
+        "ozz_wrap.h",
     },
 }
