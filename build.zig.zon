@@ -1,7 +1,12 @@
 .{
     .name = "ozz-animation",
     .version = "0.15.0",
-    .dependencies = .{},
+    .dependencies = .{
+        .@"emsdk-zig" = .{
+            .url = "git+https://github.com/ousttrue/emsdk-zig.git#f36400831add3e00c94059f594a163f3e93b5742",
+            .hash = "122088fff71531cd275164d5d879952dfbf7a1aee70736462ce85f235f5cf7dfb03d",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",

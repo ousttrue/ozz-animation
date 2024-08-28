@@ -5,8 +5,7 @@ build-cc/
 # meson tmp
 Makefile
 prefix
-prefix_debug
-prefix_release
+prefix_*
 
 # zig
 .zig-cache
