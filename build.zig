@@ -22,8 +22,9 @@ fn buildToWriteFile(
         _ = wf.addCopyFile(prefix.path(b, "bin/ozz-animation.dll"), "bin/ozz-animation.dll");
         _ = wf.addCopyFile(prefix.path(b, "lib/ozz-animation.lib"), "lib/ozz-animation.lib");
     }
-    _ = wf.addCopyFile(prefix.path(b, "media/skeleton.ozz"), "web/ozz_anim_skeleton.ozz");
-    _ = wf.addCopyFile(prefix.path(b, "media/animation.ozz"), "web/ozz_anim_animation.ozz");
+
+    _ = wf.addCopyFile(b.path("media/bin/pab_skeleton.ozz"), "web/ozz_anim_skeleton.ozz");
+    _ = wf.addCopyFile(b.path("media/bin/pab_crossarms.ozz"), "web/ozz_anim_animation.ozz");
 }
 
 fn prefixFromMesonBuild(
