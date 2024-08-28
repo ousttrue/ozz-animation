@@ -13,6 +13,7 @@
         "src",
         "include",
         "samples",
+        "media",
         "meson.build",
         "ozz_wrap.cpp",
         "ozz_wrap.h",
