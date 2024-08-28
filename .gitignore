@@ -1,3 +1,8 @@
 build/
 build-cc/
 .DS_Store
+
+# meson tmp
+Makefile
+prefix
+
