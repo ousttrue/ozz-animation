@@ -1,61 +1,57 @@
 const std = @import("std");
-const build_ozz = @import("build_ozz.zig");
-const build_glfw = @import("build_glfw.zig");
-const build_framework = @import("build_framework.zig");
-const CLib = @import("CLib.zig");
-const samples = @import("build_samples.zig").samples;
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    if (target.result.isWasm()) {
+        @panic("todo: wasm not implemented");
+    } else {
+        dllToWriteFile(b.default_step, b, optimize);
+    }
+}
 
-    const ozz = build_ozz.build(b, target, optimize);
-    const glfw = build_glfw.build(b, target, optimize);
-    var libs = [2]*const CLib{ &ozz, &glfw };
-    const framework = build_framework.build(
-        b,
-        target,
-        optimize,
-        &libs,
-    );
+fn dllToWriteFile(
+    step: *std.Build.Step,
+    b: *std.Build,
+    optimize: std.builtin.OptimizeMode,
+) void {
+    const wf = b.addNamedWriteFiles("meson_build");
+    step.dependOn(&wf.step);
+    const prefix = prefixFromMesonBuild(&wf.step, b, optimize);
+    _ = wf.addCopyFile(prefix.path(b, "bin/ozz-animation.dll"), "bin/ozz-animation.dll");
+    _ = wf.addCopyFile(prefix.path(b, "lib/ozz-animation.lib"), "lib/ozz-animation.lib");
+}
 
-    for (samples) |sample| {
-        // sample.build(b, target, optimize);
-        const exe = b.addExecutable(.{
-            .target = target,
-            .optimize = optimize,
-            .name = sample.name,
+fn prefixFromMesonBuild(
+    step: *std.Build.Step,
+    b: *std.Build,
+    optimize: std.builtin.OptimizeMode,
+) std.Build.LazyPath {
+    const builddir = b.path(if (optimize == .Debug) "build_native_debug" else "build_native_release");
+    const setup_dir = builddir.getPath(b);
+    const prefix = b.path(if (optimize == .Debug) "prefix_debug" else "prefix_release");
+    const meson_install = b.addSystemCommand(&.{
+        "meson",
+        "install",
+        "-C",
+        setup_dir,
+    });
+    step.dependOn(&meson_install.step);
+
+    if (std.fs.openDirAbsolute(setup_dir, .{})) |*dir| {
+        @constCast(dir).close();
+    } else |_| {
+        const meson_setup = b.addSystemCommand(&.{
+            "meson",
+            "setup",
+            setup_dir,
+            "--buildtype",
+            if (optimize == .Debug) "debug" else "release",
+            "--prefix",
         });
-        ozz.link(b, exe);
-        glfw.link(b, exe);
-        framework.link(b, exe);
-        exe.addCSourceFiles(.{ .files = sample.cfiles });
-        exe.linkLibCpp();
-        exe.linkSystemLibrary("OpenGL32");
-        b.installArtifact(exe);
-        for (sample.assets) |asset| {
-            b.installFile(asset.src, asset.dst);
-        }
-
-        const run_cmd = b.addRunArtifact(exe);
-        run_cmd.cwd = b.path("zig-out/bin");
-        run_cmd.step.dependOn(b.getInstallStep());
-        if (b.args) |args| {
-            run_cmd.addArgs(args);
-        }
-        const run_step = b.step(
-            b.fmt("run-{s}", .{sample.name}),
-            b.fmt("Run: {s}", .{sample.name}),
-        );
-        run_step.dependOn(&run_cmd.step);
+        meson_setup.addFileArg(prefix);
+        meson_install.step.dependOn(&meson_setup.step);
     }
 
-    // const exe_unit_tests = b.addTest(.{
-    //     .root_source_file = b.path("src/main.zig"),
-    //     .target = target,
-    //     .optimize = optimize,
-    // });
-    // const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
-    // const test_step = b.step("test", "Run unit tests");
-    // test_step.dependOn(&run_exe_unit_tests.step);
+    return prefix;
 }

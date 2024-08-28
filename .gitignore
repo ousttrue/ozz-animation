@@ -1,7 +1,13 @@
 build/
 build-cc/
 .DS_Store
-prefix/
 
-/zig-out/
-/.zig-cache/
+# meson tmp
+Makefile
+prefix
+prefix_debug
+prefix_release
+
+# zig
+.zig-cache
+zig-out
