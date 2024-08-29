@@ -5,7 +5,7 @@ pub fn build(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    deps: []*const CLib,
+    deps: []const *const CLib,
 ) CLib {
     const lib = b.addStaticLibrary(.{
         .name = "framework",
@@ -14,27 +14,27 @@ pub fn build(
     });
     lib.addCSourceFiles(.{
         .files = &.{
-            "samples/framework/application.cc",
-            "samples/framework/image.cc",
-            "samples/framework/profile.cc",
-            "samples/framework/utils.cc",
-            "samples/framework/mesh.cc",
-            "samples/framework/internal/camera.cc",
-            "samples/framework/internal/immediate.cc",
-            "samples/framework/internal/imgui_impl.cc",
-            "samples/framework/internal/renderer_impl.cc",
-            "samples/framework/internal/shader.cc",
-            "samples/framework/internal/shooter.cc",
+            "framework/application.cc",
+            "framework/image.cc",
+            "framework/profile.cc",
+            "framework/utils.cc",
+            "framework/mesh.cc",
+            "framework/internal/camera.cc",
+            "framework/internal/immediate.cc",
+            "framework/internal/imgui_impl.cc",
+            "framework/internal/renderer_impl.cc",
+            "framework/internal/shader.cc",
+            "framework/internal/shooter.cc",
         },
     });
-    lib.addIncludePath(b.path("samples"));
+    lib.addIncludePath(b.path("../samples"));
     for (deps) |dep| {
         dep.link(b, lib);
     }
     lib.linkLibCpp();
     return .{
         .include_directories = &.{
-            "samples",
+            "../samples",
         },
         .lib = lib,
     };

@@ -24,6 +24,7 @@ pub fn build(b: *std.Build) void {
                 );
 
                 const run = b.addRunArtifact(install_artifact.artifact);
+                // run.setCwd(b.path("zig-out/bin"));
                 step.dependOn(&run.step);
 
                 const install = b.addInstallArtifact(install_artifact.artifact, .{});
