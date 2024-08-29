@@ -100,17 +100,16 @@ else
             install: true,
         )
 
+        install_data(
+            sources: [
+                'media/bin/pab_skeleton.ozz',
+                'media/bin/pab_crossarms.ozz',
+            ],
+            rename: [
+                'media/skeleton.ozz',
+                'media/animation.ozz',
+            ],
+            install_dir: 'bin',
+        )
     endif
 endif
-
-install_data(
-    sources: [
-        'media/bin/pab_skeleton.ozz',
-        'media/bin/pab_crossarms.ozz',
-    ],
-    rename: [
-        'media/skeleton.ozz',
-        'media/animation.ozz',
-    ],
-    install_dir: 'bin',
-)

@@ -1,4 +1,5 @@
 #include "ozz_wrap.h"
+
 #include <string.h>
 
 // ozz-animation headers
@@ -40,7 +41,7 @@ struct ozz_t {
   ozz::vector<ozz::math::SoaTransform> local_matrices;
   ozz::vector<ozz::math::Float4x4> model_matrices;
   //     int num_skeleton_joints;    // number of joints in the skeleton
-  int num_skin_joints; // number of joints actually used by skinned mesh
+  int num_skin_joints;  // number of joints actually used by skinned mesh
   ozz::vector<uint16_t> joint_remaps;
   ozz::vector<ozz::math::Float4x4> mesh_inverse_bindposes;
 };
@@ -186,16 +187,19 @@ size_t OZZ_num_joints(ozz_t *p) { return p->skeleton.num_joints(); }
 const short *OZZ_joint_parents(ozz_t *p) {
   return p->skeleton.joint_parents().data();
 }
+
+const float *OZZ_skeleton_matrices(ozz_t *ozz, size_t joint_index) {
+  return (float *)&ozz->skeleton.joint_rest_poses()[joint_index];
+}
+
 const float *OZZ_model_matrices(ozz_t *ozz, size_t joint_index) {
   return (float *)&ozz->model_matrices[joint_index];
 }
 
 void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
                        float *joint_upload_buffer, int max_joints) {
-
   auto anim_duration = p->animation.duration();
   for (int instance = 0; instance < num_instances; instance++) {
-
     // each character instance evaluates its own animation
     const float anim_ratio =
         fmodf(((float)abs_time_sec + (instance * 0.1f)) / anim_duration, 1.0f);
@@ -246,4 +250,4 @@ void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
 
 DECLSPEC void OZZ_free(void *p) { free(p); }
 
-} // extern "C"
+}  // extern "C"
