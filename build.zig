@@ -5,6 +5,33 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     buildToWriteFile(b.default_step, b, target, optimize);
+
+    if (if (b.option(bool, "samples", "build samples")) |enable_samples|
+        enable_samples
+    else
+        false)
+    {
+        const samples_dep = b.dependency("samples", .{
+            .target = target,
+            .optimize = optimize,
+        });
+
+        for (samples_dep.builder.install_tls.step.dependencies.items) |dep_step| {
+            if (dep_step.cast(std.Build.Step.InstallArtifact)) |install_artifact| {
+                const step = b.step(
+                    b.fmt("run-{s}", .{install_artifact.artifact.name}),
+                    b.fmt("Run {s}", .{install_artifact.artifact.name}),
+                );
+
+                const run = b.addRunArtifact(install_artifact.artifact);
+                step.dependOn(&run.step);
+
+                const install = b.addInstallArtifact(install_artifact.artifact, .{});
+                b.getInstallStep().dependOn(&install.step);
+                run.step.dependOn(&install.step);
+            }
+        }
+    }
 }
 
 const medias = [_][]const u8{
