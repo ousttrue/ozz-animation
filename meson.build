@@ -48,12 +48,13 @@ if cxx.get_id() == 'emscripten'
         include_directories: [ozz_inc, include_directories('src')],
         cpp_args: [
             '-DEMSCRIPTEN=1',
-            '-sSIDE_MODULE',
+            '-sSIDE_MODULE=1',
+            '-fPIC',
         ],
         link_args: [
             '-sEXPORT_ALL=1',
             '-sWASM=1',
-            '-sSIDE_MODULE',
+            '-sSIDE_MODULE=1',
         ],
         # pic: true,
         install: true,
