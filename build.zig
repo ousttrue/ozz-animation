@@ -38,6 +38,9 @@ pub fn build(b: *std.Build) void {
             exe.addCSourceFiles(.{
                 .files = sample.cfiles,
             });
+            for(sample.includes)|include|{
+                exe.addIncludePath(b.path(include));
+            }
             framework.link(b, exe);
             ozz.link(b, exe);
             glfw.link(b, exe);
