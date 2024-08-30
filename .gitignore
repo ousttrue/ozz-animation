@@ -14,3 +14,5 @@ zig-out
 .cache
 builddir
 compile_commands.json
+# sokol
+*.glsl.h

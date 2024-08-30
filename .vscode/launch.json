@@ -8,10 +8,10 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zig-out/bin/skinning.exe",
+            "program": "${workspaceFolder}/zig-out/bin/ozz_anim.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/zig-out/bin",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal"
         }

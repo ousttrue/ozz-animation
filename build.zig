@@ -1,14 +1,16 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const zcc = @import("compile_commands");
+const zcc = @import("zcc.zig");
+const shdc = @import("shdc.zig");
 
+const libs = [_][]const u8{
+    // "OpenGL32",
+    "Gdi32",
+};
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     buildToWriteFile(b.default_step, b, target, optimize);
-
-    // make a list of targets that have include files and c source files
-    var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
 
     if (if (b.option(bool, "samples", "build samples")) |enable_samples|
         enable_samples
@@ -35,20 +37,35 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
+
+            if (sample.sokol_shader) |sokol_shader| {
+                exe.step.dependOn(shdc.sokolShdc(b, target, sokol_shader));
+            }
+
             exe.addCSourceFiles(.{
                 .files = sample.cfiles,
+                .flags = &.{
+                    "-std=c++20",
+                },
             });
-            for(sample.includes)|include|{
+            for (sample.includes) |include| {
                 exe.addIncludePath(b.path(include));
             }
             framework.link(b, exe);
             ozz.link(b, exe);
             glfw.link(b, exe);
-            exe.linkSystemLibrary("OpenGL32");
+            for (libs) |lib| {
+                exe.linkSystemLibrary(lib);
+            }
             b.installArtifact(exe);
 
             const install = b.addInstallArtifact(exe, .{});
             b.getInstallStep().dependOn(&install.step);
+
+            // targets.append(exe) catch @panic("OOM");
+            // add a step called "zcc" (Compile commands DataBase) for making
+            // compile_commands.json. could be named anything. cdb is just quick to type
+            install.step.dependOn(zcc.createStep(b, .{ .targets = &.{exe} }));
 
             const run = b.addRunArtifact(exe);
             run.step.dependOn(&install.step);
@@ -59,18 +76,8 @@ pub fn build(b: *std.Build) void {
                 b.fmt("Run {s}", .{sample.name}),
             );
             step.dependOn(&run.step);
-
-            // for (sample.assets) |asset| {
-            //     b.installFile(asset.src, asset.dst);
-            // }
-
-            targets.append(exe) catch @panic("OOM");
         }
     }
-
-    // add a step called "zcc" (Compile commands DataBase) for making
-    // compile_commands.json. could be named anything. cdb is just quick to type
-    zcc.createStep(b, "zcc", .{ .targets = targets.toOwnedSlice() catch @panic("OOM") });
 }
 
 const medias = [_][]const u8{

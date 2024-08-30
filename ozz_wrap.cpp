@@ -37,7 +37,7 @@ static_assert(sizeof(vertex_t) == 24, "vertex_t");
 struct ozz_t {
   ozz::animation::Skeleton skeleton;
   ozz::animation::Animation animation;
-  ozz::animation::SamplingJob::Context cache;
+  ozz::animation::SamplingJob::Context context;
   ozz::vector<ozz::math::SoaTransform> local_matrices;
   ozz::vector<ozz::math::Float4x4> model_matrices;
   //     int num_skeleton_joints;    // number of joints in the skeleton

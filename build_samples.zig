@@ -2,6 +2,7 @@ pub const Sample = struct {
     name: []const u8,
     cfiles: []const []const u8,
     includes: []const []const u8 = &.{},
+    sokol_shader: ?[]const u8 = null,
 };
 
 pub const samples = [_]Sample{
@@ -95,5 +96,40 @@ pub const samples = [_]Sample{
             "extern/jsoncpp/dist",
             "src",
         },
-     },
+    },
+
+    // https://github.com/CU-Production/ozz_test.git
+    .{
+        .name = "ozz_anim",
+        .cfiles = &.{
+            "samples/ozz_anim/ozz_anim.cpp",
+            "extern/imgui/imgui.cpp",
+            "extern/imgui/imgui_demo.cpp",
+            "extern/imgui/imgui_draw.cpp",
+            "extern/imgui/imgui_widgets.cpp",
+            "extern/imgui/imgui_tables.cpp",
+        },
+        .includes = &.{
+            "extern/sokol",
+            "extern/sokol/util",
+            "extern/imgui",
+        },
+    },
+    .{
+        .name = "ozz_skin",
+        .cfiles = &.{
+            "samples/ozz_skin/ozz_skin.cpp",
+            "extern/imgui/imgui.cpp",
+            "extern/imgui/imgui_demo.cpp",
+            "extern/imgui/imgui_draw.cpp",
+            "extern/imgui/imgui_widgets.cpp",
+            "extern/imgui/imgui_tables.cpp",
+        },
+        .includes = &.{
+            "extern/sokol",
+            "extern/sokol/util",
+            "extern/imgui",
+        },
+        .sokol_shader = "samples/ozz_skin/ozz_skin.glsl",
+    },
 };

@@ -2,7 +2,7 @@ project(
     'ozz-animation',
     'cpp',
     version: '0.15.0',
-    default_options: ['cpp_std=c++11'],
+    default_options: ['cpp_std=c++14'],
 )
 
 srcs = [
