@@ -46,17 +46,17 @@
 // Skeleton archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton,
                            "Path to the skeleton (ozz archive format).",
-                           "media/ruby_skeleton.ozz", false)
+                           "media/bin/ruby_skeleton.ozz", false)
 
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/ruby_animation.ozz", false)
+                           "media/bin/ruby_animation.ozz", false)
 
 // Mesh archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(mesh,
                            "Path to the skinned mesh (ozz archive format).",
-                           "media/ruby_mesh.ozz", false)
+                           "media/bin/ruby_mesh.ozz", false)
 
 class SkinningSampleApplication : public ozz::sample::Application {
  protected:

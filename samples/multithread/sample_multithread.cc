@@ -55,12 +55,12 @@
 // Skeleton archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton,
                            "Path to the skeleton (ozz archive format).",
-                           "media/skeleton.ozz", false)
+                           "media/bin/pab_skeleton.ozz", false)
 
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the first animation (ozz archive format).",
-                           "media/animation.ozz", false)
+                           "media/bin/pab_walk.ozz", false)
 
 // Interval between each character.
 const float kInterval = 2.f;

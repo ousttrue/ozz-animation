@@ -48,21 +48,21 @@
 // Skeleton archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton,
                            "Path to the skeleton (ozz archive format).",
-                           "media/skeleton.ozz", false)
+                           "media/bin/pab_skeleton.ozz", false)
 
 // MAin animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the main animation(ozz archive format).",
-                           "media/pab_walk.ozz", false)
+                           "media/bin/pab_walk.ozz", false)
 
 // Additive animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(
     splay_animation,
     "Path to the additive splay animation (ozz archive format).",
-    "media/pab_curl_additive.ozz", false)
+    "media/bin/pab_curl_additive.ozz", false)
 OZZ_OPTIONS_DECLARE_STRING(
     curl_animation, "Path to the additive curl animation (ozz archive format).",
-    "media/pab_splay_additive.ozz", false)
+    "media/bin/pab_splay_additive.ozz", false)
 
 class AdditiveBlendSampleApplication : public ozz::sample::Application {
  public:
