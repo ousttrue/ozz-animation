@@ -80,4 +80,20 @@ pub const samples = [_]Sample{
             "src",
         },
     },
+    .{
+        .name = "gltf2ozz",
+        .cfiles = &.{
+            "src/animation/offline/gltf/gltf2ozz.cc",
+            "src/animation/offline/tools/import2ozz.cc",
+            "extern/jsoncpp/dist/jsoncpp.cpp",
+            "src/animation/offline/tools/import2ozz_config.cc",
+            "src/animation/offline/tools/import2ozz_skel.cc",
+            "src/animation/offline/tools/import2ozz_anim.cc",
+            "src/animation/offline/tools/import2ozz_track.cc",
+        },
+        .includes = &.{
+            "extern/jsoncpp/dist",
+            "src",
+        },
+     },
 };
