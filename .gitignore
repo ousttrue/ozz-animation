@@ -13,3 +13,4 @@ zig-out
 # clangd
 .cache
 builddir
+compile_commands.json

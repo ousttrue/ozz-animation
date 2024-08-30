@@ -1,10 +1,14 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const zcc = @import("compile_commands");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     buildToWriteFile(b.default_step, b, target, optimize);
+
+    // make a list of targets that have include files and c source files
+    var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
 
     if (if (b.option(bool, "samples", "build samples")) |enable_samples|
         enable_samples
@@ -30,9 +34,15 @@ pub fn build(b: *std.Build) void {
                 const install = b.addInstallArtifact(install_artifact.artifact, .{});
                 b.getInstallStep().dependOn(&install.step);
                 run.step.dependOn(&install.step);
+
+                targets.append(install_artifact.artifact) catch @panic("OOM");
             }
         }
     }
+
+    // add a step called "zcc" (Compile commands DataBase) for making
+    // compile_commands.json. could be named anything. cdb is just quick to type
+    zcc.createStep(b, "zcc", .{ .targets = targets.toOwnedSlice() catch @panic("OOM") });
 }
 
 const medias = [_][]const u8{
