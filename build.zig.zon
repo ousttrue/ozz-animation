@@ -25,5 +25,11 @@
         "ozz_wrap.h",
         "meson.build",
         "meson_options.txt",
+        //
+        "CLib.zig",
+        "build_framework.zig",
+        "build_glfw.zig",
+        "build_ozz.zig",
+        "build_samples.zig",
     },
 }

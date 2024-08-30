@@ -15,28 +15,53 @@ pub fn build(b: *std.Build) void {
     else
         false)
     {
-        const samples_dep = b.dependency("samples", .{
-            .target = target,
-            .optimize = optimize,
-        });
+        const build_samples = @import("build_samples.zig");
+        const build_framework = @import("build_framework.zig");
+        const build_ozz = @import("build_ozz.zig");
+        const build_glfw = @import("build_glfw.zig");
 
-        for (samples_dep.builder.install_tls.step.dependencies.items) |dep_step| {
-            if (dep_step.cast(std.Build.Step.InstallArtifact)) |install_artifact| {
-                const step = b.step(
-                    b.fmt("run-{s}", .{install_artifact.artifact.name}),
-                    b.fmt("Run {s}", .{install_artifact.artifact.name}),
-                );
+        const ozz = build_ozz.build(b, target, optimize);
+        const glfw = build_glfw.build(b, target, optimize);
+        const framework = build_framework.build(
+            b,
+            target,
+            optimize,
+            &.{ &ozz, &glfw },
+        );
 
-                const run = b.addRunArtifact(install_artifact.artifact);
-                // run.setCwd(b.path("zig-out/bin"));
-                step.dependOn(&run.step);
+        for (build_samples.samples) |sample| {
+            const exe = b.addExecutable(.{
+                .name = sample.name,
+                .target = target,
+                .optimize = optimize,
+            });
+            exe.addCSourceFiles(.{
+                .files = sample.cfiles,
+            });
+            framework.link(b, exe);
+            ozz.link(b, exe);
+            glfw.link(b, exe);
+            exe.linkSystemLibrary("OpenGL32");
+            b.installArtifact(exe);
 
-                const install = b.addInstallArtifact(install_artifact.artifact, .{});
-                b.getInstallStep().dependOn(&install.step);
-                run.step.dependOn(&install.step);
+            const install = b.addInstallArtifact(exe, .{});
+            b.getInstallStep().dependOn(&install.step);
 
-                targets.append(install_artifact.artifact) catch @panic("OOM");
-            }
+            const run = b.addRunArtifact(exe);
+            run.step.dependOn(&install.step);
+            // run.setCwd(b.path("zig-out/bin"));
+
+            const step = b.step(
+                b.fmt("run-{s}", .{sample.name}),
+                b.fmt("Run {s}", .{sample.name}),
+            );
+            step.dependOn(&run.step);
+
+            // for (sample.assets) |asset| {
+            //     b.installFile(asset.src, asset.dst);
+            // }
+
+            targets.append(exe) catch @panic("OOM");
         }
     }
 
