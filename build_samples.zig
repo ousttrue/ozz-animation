@@ -97,7 +97,19 @@ pub const samples = [_]Sample{
             "src",
         },
     },
-
+    // howto
+    .{
+        .name = "custom_animation_importer",
+        .cfiles = &.{"howtos/custom_animation_importer.cc"},
+    },
+    .{
+        .name = "custom_skeleton_importer",
+        .cfiles = &.{"howtos/custom_skeleton_importer.cc"},
+    },
+    .{
+        .name = "load_from_file",
+        .cfiles = &.{"howtos/load_from_file.cc"},
+    },
     // https://github.com/CU-Production/ozz_test.git
     .{
         .name = "ozz_anim",

@@ -63,7 +63,7 @@ bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size) {
     const int num_joints = p->skeleton.num_joints();
     p->local_matrices.resize(num_soa_joints);
     p->model_matrices.resize(num_joints);
-    p->cache.Resize(num_joints);
+    p->context.Resize(num_joints);
     return true;
   } else {
     return false;
@@ -169,7 +169,7 @@ void OZZ_eval_animation(ozz_t *p, float anim_ratio) {
   // sample animation
   ozz::animation::SamplingJob sampling_job;
   sampling_job.animation = &p->animation;
-  sampling_job.context = &p->cache;
+  sampling_job.context = &p->context;
   sampling_job.ratio = anim_ratio;
   sampling_job.output = make_span(p->local_matrices);
   sampling_job.Run();
@@ -209,7 +209,7 @@ void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
     // makes a small difference, but not much
     ozz::animation::SamplingJob sampling_job;
     sampling_job.animation = &p->animation;
-    sampling_job.context = &p->cache;
+    sampling_job.context = &p->context;
     sampling_job.ratio = anim_ratio;
     sampling_job.output = make_span(p->local_matrices);
     sampling_job.Run();

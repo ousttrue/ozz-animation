@@ -158,7 +158,6 @@ fn prefixFromMesonBuild(
     // if (std.fs.openDirAbsolute(setup_dir, .{})) |*dir| {
     //     @constCast(dir).close();
     // } else |_| {
-    std.debug.print("setup\n", .{});
     const meson_setup = b.addSystemCommand(&.{
         "meson",
         "setup",
