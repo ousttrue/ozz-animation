@@ -3,6 +3,7 @@ pub const Sample = struct {
     cfiles: []const []const u8,
     includes: []const []const u8 = &.{},
     sokol_shader: ?[]const u8 = null,
+    use_gtest: bool = false,
 };
 
 pub const samples = [_]Sample{
@@ -109,6 +110,33 @@ pub const samples = [_]Sample{
     .{
         .name = "load_from_file",
         .cfiles = &.{"howtos/load_from_file.cc"},
+    },
+    // tests
+    .{
+        .name = "test_base_maths",
+        .cfiles = &.{
+            "extern/gtest/fused-src/gtest/gtest-all.cc",
+            "extern/gtest/fused-src/gtest/gtest_main.cc",
+            "test/base/maths/box_tests.cc",
+            "test/base/maths/math_archive_tests.cc",
+            "test/base/maths/math_ex_tests.cc",
+            "test/base/maths/quaternion_tests.cc",
+            "test/base/maths/rect_tests.cc",
+            "test/base/maths/simd_float4x4_tests.cc",
+            "test/base/maths/simd_float_math_tests.cc",
+            "test/base/maths/simd_int_math_tests.cc",
+            "test/base/maths/simd_math_archive_tests.cc",
+            "test/base/maths/simd_math_transpose_tests.cc",
+            "test/base/maths/simd_quaternion_math_tests.cc",
+            "test/base/maths/soa_float4x4_tests.cc",
+            "test/base/maths/soa_float_tests.cc",
+            "test/base/maths/soa_math_archive_tests.cc",
+            "test/base/maths/soa_quaternion_tests.cc",
+            "test/base/maths/soa_transform_tests.cc",
+            "test/base/maths/transform_tests.cc",
+            "test/base/maths/vec_float_tests.cc",
+        },
+        .use_gtest = true,
     },
     // https://github.com/CU-Production/ozz_test.git
     .{

@@ -59,6 +59,10 @@ pub fn build(b: *std.Build) void {
             }
             b.installArtifact(exe);
 
+            if (sample.use_gtest) {
+                exe.addIncludePath(b.path("extern/gtest/fused-src"));
+            }
+
             const install = b.addInstallArtifact(exe, .{});
             b.getInstallStep().dependOn(&install.step);
 
