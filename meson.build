@@ -30,7 +30,7 @@ srcs = [
     'src/animation/runtime/local_to_model_job.cc',
     'src/animation/runtime/sampling_job.cc',
     'src/animation/runtime/skeleton.cc',
-    # 'src/animation/runtime/skeleton_utils.cc',
+    'src/animation/runtime/skeleton_utils.cc',
     # 'src/animation/runtime/track.cc',
     # 'src/animation/runtime/track_sampling_job.cc',
     # 'src/animation/runtime/track_triggering_job.cc',

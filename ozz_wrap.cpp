@@ -7,6 +7,7 @@
 #include "ozz/animation/runtime/local_to_model_job.h"
 #include "ozz/animation/runtime/sampling_job.h"
 #include "ozz/animation/runtime/skeleton.h"
+#include "ozz/animation/runtime/skeleton_utils.h"
 #include "ozz/base/containers/vector.h"
 #include "ozz/base/io/archive.h"
 #include "ozz/base/io/stream.h"
@@ -188,8 +189,12 @@ const short *OZZ_joint_parents(ozz_t *p) {
   return p->skeleton.joint_parents().data();
 }
 
-const float *OZZ_skeleton_matrices(ozz_t *ozz, size_t joint_index) {
-  return (float *)&ozz->skeleton.joint_rest_poses()[joint_index];
+const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
+                            float pOutR[4], float pOutS[3]) {
+  auto t = ozz::animation::GetJointLocalRestPose(ozz->skeleton, joint_index);
+  *((ozz::math::Float3 *)pOutT) = t.translation;
+  *((ozz::math::Quaternion *)pOutR) = t.rotation;
+  *((ozz::math::Float3 *)pOutS) = t.scale;
 }
 
 const float *OZZ_model_matrices(ozz_t *ozz, size_t joint_index) {
