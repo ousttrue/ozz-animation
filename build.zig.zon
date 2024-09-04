@@ -35,5 +35,7 @@
         "build_glfw.zig",
         "build_ozz.zig",
         "build_samples.zig",
+        "shdc.zig",
+        "zcc.zig",
     },
 }
