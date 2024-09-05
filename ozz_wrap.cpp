@@ -192,9 +192,15 @@ const short *OZZ_joint_parents(ozz_t *p) {
 const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
                             float pOutR[4], float pOutS[3]) {
   auto t = ozz::animation::GetJointLocalRestPose(ozz->skeleton, joint_index);
-  *((ozz::math::Float3 *)pOutT) = t.translation;
-  *((ozz::math::Quaternion *)pOutR) = t.rotation;
-  *((ozz::math::Float3 *)pOutS) = t.scale;
+  if (pOutT) {
+    *((ozz::math::Float3 *)pOutT) = t.translation;
+  }
+  if (pOutR) {
+    *((ozz::math::Quaternion *)pOutR) = t.rotation;
+  }
+  if (pOutS) {
+    *((ozz::math::Float3 *)pOutS) = t.scale;
+  }
 }
 
 const float *OZZ_model_matrices(ozz_t *ozz, size_t joint_index) {
