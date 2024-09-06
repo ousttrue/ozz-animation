@@ -36,7 +36,7 @@ pub fn build(b: *std.Build) void {
             });
 
             if (sample.sokol_shader) |sokol_shader| {
-                exe.step.dependOn(shdc.sokolShdc(b, target, sokol_shader));
+                exe.step.dependOn(shdc.shdc_c(b, target, sokol_shader));
             }
 
             exe.addCSourceFiles(.{

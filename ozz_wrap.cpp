@@ -49,7 +49,7 @@ struct ozz_t {
 };
 
 ozz_t *OZZ_init() { return new ozz_t; }
-void OZZ_shutdown(void *p) { delete ((ozz_t *)p); }
+void OZZ_shutdown(ozz_t *p) { delete (p); }
 
 bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size) {
   // NOTE: if we derived our own ozz::io::Stream class we could
@@ -269,6 +269,6 @@ void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
   }
 }
 
-DECLSPEC void OZZ_free(void *p) { free(p); }
+DECLSPEC void OZZ_free(ozz_t *p) { free(p); }
 
 } // extern "C"

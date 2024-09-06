@@ -16,10 +16,10 @@
 extern "C" {
 #endif
 
-struct ozz_t;
+typedef struct ozz_t ozz_t;
 
 DECLSPEC ozz_t *OZZ_init();
-DECLSPEC void OZZ_shutdown(void *p);
+DECLSPEC void OZZ_shutdown(ozz_t *p);
 DECLSPEC bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size);
 DECLSPEC bool OZZ_load_animation(ozz_t *p, const void *ptr, size_t size);
 DECLSPEC bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size,
@@ -37,7 +37,7 @@ DECLSPEC const float *OZZ_model_matrices(ozz_t *ozz, size_t joint_index);
 DECLSPEC void OZZ_update_joints(ozz_t *ozz, int num_instances,
                                 float abs_time_sec, float *joint_upload_buffer,
                                 int max_joints);
-DECLSPEC void OZZ_free(void *p);
+DECLSPEC void OZZ_free(ozz_t *p);
 
 #ifdef __cplusplus
 }  // extern "C"

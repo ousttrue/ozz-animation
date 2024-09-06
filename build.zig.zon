@@ -17,17 +17,21 @@
             .url = "git+https://github.com/floooh/sokol-tools-bin.git#8cc8c257380c9a5e230a84aeebf09cd500903fbc",
             .hash = "12200f5129c997728160ab584adcc939b9dbca6f802d7273f386dad777de85e80421",
         },
+        .rowmath = .{
+            .url = "git+https://github.com/ousttrue/rowmath.git#1a5bc121254a9e2b1b5eb0453461dc4bb17f0cd7",
+            .hash = "12205f90e4578df6f51d118b13b253ee5d58ffe1f4b9cfcf9f74962d106b3863c061",
+        },
         .sokol = .{
-            .url = "git+https://github.com/floooh/sokol.git#df71cc24cb273c0cf68ccef91932c09893006b18",
-            .hash = "122046b6b71ff35717286723841f2a13d0b27c29104f550d5292f9845cced8c24d65",
+            .url = "git+https://github.com/floooh/sokol-zig.git#7a1f685a29f7dbfe8ce0fe23871d01d5b29a6d0e",
+            .hash = "1220fd8800b4fe7a38d4778b8288f55eb451c8167b200c02e73068244d9ccefe3395",
         },
         .cimgui = .{
-            .url = "git+https://github.com/cimgui/cimgui.git#35a4e8f8932c6395156ffacee288b9c30e50cb63",
-            .hash = "12202b3fbdc2d6df12b531328cc74d9686abd0fbeb5807dddf559e9a03b11ae1fe26",
+            .url = "git+https://github.com/cimgui/cimgui.git#1.90.7dock",
+            .hash = "1220820e37db28faf8008f091ad3c31ceffc9e61b8dc57a3a11b5671b6446df7e1bd",
         },
         .imgui = .{
-            .url = "git+https://github.com/ocornut/imgui.git#a5cf4fe374d491c882974d492a05117ef4bcc102",
-            .hash = "12206d79fb28844c0421d2deb14a820d49cebe29472db114cb4ae53393e1e287ade8",
+            .url = "git+https://github.com/ocornut/imgui.git#v1.90.7-docking",
+            .hash = "122087d4c571d9054c9bc0ba3d006a3ad5f0026a0d0d33febd95393c890c63042db0",
         },
     },
     .paths = .{

@@ -16,3 +16,4 @@ builddir
 compile_commands.json
 # sokol
 *.glsl.h
+*.glsl.zig
