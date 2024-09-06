@@ -13,6 +13,7 @@
 #include "sokol_fetch.h"
 #include "sokol_log.h"
 #include "sokol_glue.h"
+#include "bone.glsl.h"
 
 #define SOKOL_GL_IMPL
 #include "sokol_gl.h"
@@ -26,32 +27,282 @@
 #include "HandmadeMath.h"
 #include "util/camera.h"
 
-// ozz-animation headers
-#include "ozz/animation/runtime/animation.h"
-#include "ozz/animation/runtime/skeleton.h"
-#include "ozz/animation/runtime/sampling_job.h"
-#include "ozz/animation/runtime/local_to_model_job.h"
-#include "ozz/base/io/stream.h"
-#include "ozz/base/io/archive.h"
-#include "ozz/base/containers/vector.h"
-#include "ozz/base/maths/soa_transform.h"
-#include "ozz/base/maths/vec_float.h"
+#include <cmath> // fmodf
+#include <ozz_wrap.h>
 
-#include <memory> // std::unique_ptr, std::make_unique
-#include <cmath>  // fmodf
+#include <ozz/animation/runtime/skeleton.h>
+#include <ozz/animation/runtime/skeleton_utils.h>
+#include <ozz/base/maths/vec_float.h>
+#include <ozz/base/maths/simd_math.h>
+#include <ozz/base/memory/allocator.h>
 
-// wrapper struct for managed ozz-animation C++ objects, must be deleted
-// before shutdown, otherwise ozz-animation will report a memory leak
-typedef struct {
-  ozz::animation::Skeleton skeleton;
-  ozz::animation::Animation animation;
-  ozz::animation::SamplingJob::Context cache;
-  ozz::vector<ozz::math::SoaTransform> local_matrices;
-  ozz::vector<ozz::math::Float4x4> model_matrices;
-} ozz_t;
+static int
+DrawPosture_FillUniforms( // const ozz::animation::Skeleton &_skeleton,
+    int num_joints, const int16_t *parents, const int *isLeaf,
+    ozz::span<const ozz::math::Float4x4> _matrices, float *_uniforms,
+    int _max_instances) {
+  assert(ozz::IsAligned(_uniforms, alignof(ozz::math::SimdFloat4)));
+
+  // Prepares computation constants.
+  // const int num_joints = _skeleton.num_joints();
+  // const ozz::span<const int16_t> &parents = _skeleton.joint_parents();
+
+  int instances = 0;
+  for (int i = 0; i < num_joints && instances < _max_instances; ++i) {
+    // Root isn't rendered.
+    const int16_t parent_id = parents[i];
+    if (parent_id == ozz::animation::Skeleton::kNoParent) {
+      continue;
+    }
+
+    // Selects joint matrices.
+    const ozz::math::Float4x4 &parent = _matrices[parent_id];
+    const ozz::math::Float4x4 &current = _matrices[i];
+
+    // Copy parent joint's raw matrix, to render a bone between the parent
+    // and current matrix.
+    float *uniform = _uniforms + instances * 16;
+    memcpy(uniform, parent.cols, 16 * sizeof(float));
+
+    // Set bone direction (bone_dir). The shader expects to find it at index
+    // [3,7,11] of the matrix.
+    // Index 15 is used to store whether a bone should be rendered,
+    // otherwise it's a leaf.
+    float bone_dir[4];
+    ozz::math::StorePtrU(current.cols[3] - parent.cols[3], bone_dir);
+    uniform[3] = bone_dir[0];
+    uniform[7] = bone_dir[1];
+    uniform[11] = bone_dir[2];
+    uniform[15] = 1.f; // Enables bone rendering.
+
+    // Next instance.
+    ++instances;
+    uniform += 16;
+
+    // Only the joint is rendered for leaves, the bone model isn't.
+    if (isLeaf[i]) {
+      // Copy current joint's raw matrix.
+      memcpy(uniform, current.cols, 16 * sizeof(float));
+
+      // Re-use bone_dir to fix the size of the leaf (same as previous bone).
+      // The shader expects to find it at index [3,7,11] of the matrix.
+      uniform[3] = bone_dir[0];
+      uniform[7] = bone_dir[1];
+      uniform[11] = bone_dir[2];
+      uniform[15] = 0.f; // Disables bone rendering.
+      ++instances;
+    }
+  }
+
+  return instances;
+}
+
+class ScratchBuffer {
+  void *buffer_ = nullptr;
+  size_t size_ = 0;
+
+public:
+  ~ScratchBuffer() { ozz::memory::default_allocator()->Deallocate(buffer_); }
+
+  // Resizes the buffer to the new size and return the memory address.
+  void *Resize(size_t _size) {
+    if (_size > size_) {
+      size_ = _size;
+      ozz::memory::default_allocator()->Deallocate(buffer_);
+      buffer_ = ozz::memory::default_allocator()->Allocate(_size, 16);
+    }
+    return buffer_;
+  }
+};
+
+// A vertex made of positions and normals.
+struct Color {
+  unsigned char r, g, b, a;
+};
+
+struct VertexPNC {
+  ozz::math::Float3 pos;
+  ozz::math::Float3 normal;
+  Color color;
+};
+
+class Renderer {
+  // Volatile memory buffer that can be used within function scope.
+  // Minimum alignment is 16 bytes.
+  ScratchBuffer scratch_buffer_;
+
+public:
+  bool InitPosture() {
+    const float kInter = .2f;
+    { // Prepares bone mesh.
+      const ozz::math::Float3 pos[6] = {ozz::math::Float3(1.f, 0.f, 0.f),
+                                        ozz::math::Float3(kInter, .1f, .1f),
+                                        ozz::math::Float3(kInter, .1f, -.1f),
+                                        ozz::math::Float3(kInter, -.1f, -.1f),
+                                        ozz::math::Float3(kInter, -.1f, .1f),
+                                        ozz::math::Float3(0.f, 0.f, 0.f)};
+      const ozz::math::Float3 normals[8] = {
+          Normalize(Cross(pos[2] - pos[1], pos[2] - pos[0])),
+          Normalize(Cross(pos[1] - pos[2], pos[1] - pos[5])),
+          Normalize(Cross(pos[3] - pos[2], pos[3] - pos[0])),
+          Normalize(Cross(pos[2] - pos[3], pos[2] - pos[5])),
+          Normalize(Cross(pos[4] - pos[3], pos[4] - pos[0])),
+          Normalize(Cross(pos[3] - pos[4], pos[3] - pos[5])),
+          Normalize(Cross(pos[1] - pos[4], pos[1] - pos[0])),
+          Normalize(Cross(pos[4] - pos[1], pos[4] - pos[5]))};
+      const Color white = {0xff, 0xff, 0xff, 0xff};
+      const VertexPNC bones[24] = {
+          {pos[0], normals[0], white}, {pos[2], normals[0], white},
+          {pos[1], normals[0], white}, {pos[5], normals[1], white},
+          {pos[1], normals[1], white}, {pos[2], normals[1], white},
+          {pos[0], normals[2], white}, {pos[3], normals[2], white},
+          {pos[2], normals[2], white}, {pos[5], normals[3], white},
+          {pos[2], normals[3], white}, {pos[3], normals[3], white},
+          {pos[0], normals[4], white}, {pos[4], normals[4], white},
+          {pos[3], normals[4], white}, {pos[5], normals[5], white},
+          {pos[3], normals[5], white}, {pos[4], normals[5], white},
+          {pos[0], normals[6], white}, {pos[1], normals[6], white},
+          {pos[4], normals[6], white}, {pos[5], normals[7], white},
+          {pos[4], normals[7], white}, {pos[1], normals[7], white}};
+
+      // Builds and fills the vbo.
+      // Model &bone = models_[0];
+      // bone.mode = GL_TRIANGLES;
+      // bone.count = OZZ_ARRAY_SIZE(bones);
+      // GL(GenBuffers(1, &bone.vbo));
+      // GL(BindBuffer(GL_ARRAY_BUFFER, bone.vbo));
+      // GL(BufferData(GL_ARRAY_BUFFER, sizeof(bones), bones, GL_STATIC_DRAW));
+      // GL(BindBuffer(GL_ARRAY_BUFFER, 0)); // Unbinds.
+
+      // Init bone shader.
+      // bone.shader = BoneShader::Build();
+      // if (!bone.shader) {
+      //   return false;
+      // }
+    }
+
+    { // Prepares joint mesh.
+      const int kNumSlices = 20;
+      const int kNumPointsPerCircle = kNumSlices + 1;
+      const int kNumPointsYZ = kNumPointsPerCircle;
+      const int kNumPointsXY = kNumPointsPerCircle + kNumPointsPerCircle / 4;
+      const int kNumPointsXZ = kNumPointsPerCircle;
+      const int kNumPoints = kNumPointsXY + kNumPointsXZ + kNumPointsYZ;
+      const float kRadius = kInter; // Radius multiplier.
+      const Color red = {0xff, 0xc0, 0xc0, 0xff};
+      const Color green = {0xc0, 0xff, 0xc0, 0xff};
+      const Color blue = {0xc0, 0xc0, 0xff, 0xff};
+      VertexPNC joints[kNumPoints];
+
+      // Fills vertices.
+      int index = 0;
+      for (int j = 0; j < kNumPointsYZ; ++j) { // YZ plan.
+        float angle = j * ozz::math::k2Pi / kNumSlices;
+        float s = sinf(angle), c = cosf(angle);
+        VertexPNC &vertex = joints[index++];
+        vertex.pos = ozz::math::Float3(0.f, c * kRadius, s * kRadius);
+        vertex.normal = ozz::math::Float3(0.f, c, s);
+        vertex.color = red;
+      }
+      for (int j = 0; j < kNumPointsXY; ++j) { // XY plan.
+        float angle = j * ozz::math::k2Pi / kNumSlices;
+        float s = sinf(angle), c = cosf(angle);
+        VertexPNC &vertex = joints[index++];
+        vertex.pos = ozz::math::Float3(s * kRadius, c * kRadius, 0.f);
+        vertex.normal = ozz::math::Float3(s, c, 0.f);
+        vertex.color = blue;
+      }
+      for (int j = 0; j < kNumPointsXZ; ++j) { // XZ plan.
+        float angle = j * ozz::math::k2Pi / kNumSlices;
+        float s = sinf(angle), c = cosf(angle);
+        VertexPNC &vertex = joints[index++];
+        vertex.pos = ozz::math::Float3(c * kRadius, 0.f, -s * kRadius);
+        vertex.normal = ozz::math::Float3(c, 0.f, -s);
+        vertex.color = green;
+      }
+      assert(index == kNumPoints);
+
+      // Builds and fills the vbo.
+      // Model &joint = models_[1];
+      // joint.mode = GL_LINE_STRIP;
+      // joint.count = OZZ_ARRAY_SIZE(joints);
+      // GL(GenBuffers(1, &joint.vbo));
+      // GL(BindBuffer(GL_ARRAY_BUFFER, joint.vbo));
+      // GL(BufferData(GL_ARRAY_BUFFER, sizeof(joints), joints, GL_STATIC_DRAW));
+      // GL(BindBuffer(GL_ARRAY_BUFFER, 0)); // Unbinds.
+      //
+      // // Init joint shader.
+      // joint.shader = JointShader::Build();
+      // if (!joint.shader) {
+      //   return false;
+      // }
+    }
+
+    return true;
+  }
+
+  // Uses GL_ARB_instanced_arrays_supported as a first choice to render the
+  // whole skeleton in a single draw call. Does a draw call per joint if no
+  // extension can help.
+  void DrawPosture(ozz_t *ozz, ozz::span<const ozz::math::Float4x4> _matrices,
+                   const ozz::math::Float4x4 &_transform, bool _draw_joints) {
+    if (_matrices.size() < static_cast<size_t>(OZZ_num_joints(ozz))) {
+      return;
+    }
+
+    // Convert matrices to uniforms.
+    const int max_skeleton_pieces = ozz::animation::Skeleton::kMaxJoints * 2;
+    const size_t max_uniforms_size =
+        max_skeleton_pieces * 2 * 16 * sizeof(float);
+    float *uniforms =
+        static_cast<float *>(scratch_buffer_.Resize(max_uniforms_size));
+
+    const int instance_count = DrawPosture_FillUniforms(
+        // _skeleton,
+        OZZ_num_joints(ozz), OZZ_joint_parents(ozz), OZZ_is_leaf(ozz),
+        _matrices, uniforms, max_skeleton_pieces);
+    assert(instance_count <= max_skeleton_pieces);
+
+    // if (GL_ARB_instanced_arrays_supported) {
+    // DrawPosture_InstancedImpl(_transform, uniforms, instance_count,
+    //                           _draw_joints);
+    // } else {
+    //   DrawPosture_Impl(_transform, uniforms, instance_count, _draw_joints);
+    // }
+  }
+
+  // Draw posture internal non-instanced rendering fall back implementation.
+  void DrawPosture_Impl(const ozz::math::Float4x4 &_transform,
+                        const float *_uniforms, int _instance_count,
+                        bool _draw_joints) {
+    // Loops through models and instances.
+    // for (int i = 0; i < (_draw_joints ? 2 : 1); ++i) {
+    //   const Model &model = models_[i];
+    //
+    //   // Setup model vertex data.
+    //   GL(BindBuffer(GL_ARRAY_BUFFER, model.vbo));
+    //
+    //   // Bind shader
+    //   model.shader->Bind(_transform, camera_->view_proj(), sizeof(VertexPNC),
+    //   0,
+    //                      sizeof(VertexPNC), 12, sizeof(VertexPNC), 24);
+
+    // GL(BindBuffer(GL_ARRAY_BUFFER, 0));
+
+    // Draw loop.
+    // const GLint joint_uniform = model.shader->joint_uniform();
+    // for (int j = 0; j < _instance_count; ++j) {
+    //   // GL(UniformMatrix4fv(joint_uniform, 1, false, _uniforms + 16 * j));
+    //   // GL(DrawArrays(model.mode, 0, model.count));
+    // }
+
+    // model.shader->Unbind();
+    // }
+  }
+};
 
 static struct {
-  std::unique_ptr<ozz_t> ozz;
+  ozz_t *ozz = nullptr;
   sg_pass_action pass_action;
   camera_t camera;
   struct {
@@ -67,6 +318,7 @@ static struct {
     bool anim_ratio_ui_override;
     bool paused;
   } time;
+  Renderer renderer;
 } state;
 
 // io buffers for skeleton and animation data files, we know the max file size
@@ -74,8 +326,6 @@ static struct {
 static uint8_t skel_data_buffer[4 * 1024];
 static uint8_t anim_data_buffer[32 * 1024];
 
-static void eval_animation(void);
-static void draw_skeleton(void);
 static void draw_ui(void);
 static void skeleton_data_loaded(const sfetch_response_t *response);
 static void animation_data_loaded(const sfetch_response_t *response);
@@ -87,7 +337,7 @@ static const char *fileutil_get_path(const char *filename, char *buf,
 }
 
 static void init(void) {
-  state.ozz = std::make_unique<ozz_t>();
+  state.ozz = OZZ_init();
   state.time.factor = 1.0f;
 
   // setup sokol-gfx
@@ -132,16 +382,16 @@ static void init(void) {
   char path_buf[512];
   {
     sfetch_request_t req = {};
-    req.path =
-        fileutil_get_path("media/bin/pab_skeleton.ozz", path_buf, sizeof(path_buf));
+    req.path = fileutil_get_path("media/bin/pab_skeleton.ozz", path_buf,
+                                 sizeof(path_buf));
     req.callback = skeleton_data_loaded;
     req.buffer = SFETCH_RANGE(skel_data_buffer);
     sfetch_send(&req);
   }
   {
     sfetch_request_t req = {};
-    req.path =
-        fileutil_get_path("media/bin/pab_crossarms.ozz", path_buf, sizeof(path_buf));
+    req.path = fileutil_get_path("media/bin/pab_crossarms.ozz", path_buf,
+                                 sizeof(path_buf));
     req.callback = animation_data_loaded;
     req.buffer = SFETCH_RANGE(anim_data_buffer);
     sfetch_send(&req);
@@ -163,8 +413,20 @@ static void frame(void) {
     if (!state.time.paused) {
       state.time.absolute += state.time.frame * state.time.factor;
     }
-    eval_animation();
-    draw_skeleton();
+
+    // convert current time to animation ration (0.0 .. 1.0)
+    const float anim_duration = OZZ_duration(state.ozz);
+    if (!state.time.anim_ratio_ui_override) {
+      state.time.anim_ratio =
+          fmodf((float)state.time.absolute / anim_duration, 1.0f);
+    }
+    OZZ_eval_animation(state.ozz, state.time.anim_ratio);
+
+    size_t num = OZZ_num_joints(state.ozz);
+    auto pMatrix =
+        (const ozz::math::Float4x4 *)OZZ_model_matrices(state.ozz, 0);
+    state.renderer.DrawPosture(state.ozz, ozz::span{pMatrix, num},
+                               ozz::math::Float4x4::identity(), true);
   }
 
   sg_pass pass = {};
@@ -190,99 +452,8 @@ static void cleanup(void) {
   sfetch_shutdown();
   sg_shutdown();
 
-  // free C++ objects early, otherwise ozz-animation complains about memory
-  // leaks
+  OZZ_shutdown(state.ozz);
   state.ozz = nullptr;
-}
-
-static void eval_animation(void) {
-
-  // convert current time to animation ration (0.0 .. 1.0)
-  const float anim_duration = state.ozz->animation.duration();
-  if (!state.time.anim_ratio_ui_override) {
-    state.time.anim_ratio =
-        fmodf((float)state.time.absolute / anim_duration, 1.0f);
-  }
-
-  // sample animation
-  ozz::animation::SamplingJob sampling_job;
-  sampling_job.animation = &state.ozz->animation;
-  sampling_job.context = &state.ozz->cache;
-  sampling_job.ratio = state.time.anim_ratio;
-  sampling_job.output = make_span(state.ozz->local_matrices);
-  sampling_job.Run();
-
-  // convert joint matrices from local to model space
-  ozz::animation::LocalToModelJob ltm_job;
-  ltm_job.skeleton = &state.ozz->skeleton;
-  ltm_job.input = make_span(state.ozz->local_matrices);
-  ltm_job.output = make_span(state.ozz->model_matrices);
-  ltm_job.Run();
-}
-
-static void draw_vec(const ozz::math::SimdFloat4 &vec) {
-  sgl_v3f(ozz::math::GetX(vec), ozz::math::GetY(vec), ozz::math::GetZ(vec));
-}
-
-static void draw_line(const ozz::math::SimdFloat4 &v0,
-                      const ozz::math::SimdFloat4 &v1) {
-  draw_vec(v0);
-  draw_vec(v1);
-}
-
-// this draws a wireframe 3d rhombus between the current and parent joints
-static void draw_joint(int joint_index, int parent_joint_index) {
-  if (parent_joint_index < 0) {
-    return;
-  }
-
-  using namespace ozz::math;
-
-  const Float4x4 &m0 = state.ozz->model_matrices[joint_index];
-  const Float4x4 &m1 = state.ozz->model_matrices[parent_joint_index];
-
-  const SimdFloat4 p0 = m0.cols[3];
-  const SimdFloat4 p1 = m1.cols[3];
-  const SimdFloat4 ny = m1.cols[1];
-  const SimdFloat4 nz = m1.cols[2];
-
-  const SimdFloat4 len = SplatX(Length3(p1 - p0)) * simd_float4::Load1(0.1f);
-
-  const SimdFloat4 pmid = p0 + (p1 - p0) * simd_float4::Load1(0.66f);
-  const SimdFloat4 p2 = pmid + ny * len;
-  const SimdFloat4 p3 = pmid + nz * len;
-  const SimdFloat4 p4 = pmid - ny * len;
-  const SimdFloat4 p5 = pmid - nz * len;
-
-  sgl_c3f(1.0f, 1.0f, 0.0f);
-  draw_line(p0, p2);
-  draw_line(p0, p3);
-  draw_line(p0, p4);
-  draw_line(p0, p5);
-  draw_line(p1, p2);
-  draw_line(p1, p3);
-  draw_line(p1, p4);
-  draw_line(p1, p5);
-  draw_line(p2, p3);
-  draw_line(p3, p4);
-  draw_line(p4, p5);
-  draw_line(p5, p2);
-}
-
-static void draw_skeleton(void) {
-  sgl_defaults();
-  sgl_matrix_mode_projection();
-  sgl_load_matrix((const float *)&state.camera.proj);
-  sgl_matrix_mode_modelview();
-  sgl_load_matrix((const float *)&state.camera.view);
-
-  const int num_joints = state.ozz->skeleton.num_joints();
-  ozz::span<const int16_t> joint_parents = state.ozz->skeleton.joint_parents();
-  sgl_begin_lines();
-  for (int joint_index = 0; joint_index < num_joints; joint_index++) {
-    draw_joint(joint_index, joint_parents[joint_index]);
-  }
-  sgl_end();
 }
 
 static void draw_ui(void) {
@@ -324,21 +495,8 @@ static void draw_ui(void) {
 
 static void skeleton_data_loaded(const sfetch_response_t *response) {
   if (response->fetched) {
-    // NOTE: if we derived our own ozz::io::Stream class we could
-    // avoid the extra allocation and memory copy that happens
-    // with the standard MemoryStream class
-    ozz::io::MemoryStream stream;
-    stream.Write(response->data.ptr, response->data.size);
-    stream.Seek(0, ozz::io::Stream::kSet);
-    ozz::io::IArchive archive(&stream);
-    if (archive.TestTag<ozz::animation::Skeleton>()) {
-      archive >> state.ozz->skeleton;
+    if (OZZ_load_skeleton(state.ozz, response->data.ptr, response->data.size)) {
       state.loaded.skeleton = true;
-      const int num_soa_joints = state.ozz->skeleton.num_soa_joints();
-      const int num_joints = state.ozz->skeleton.num_joints();
-      state.ozz->local_matrices.resize(num_soa_joints);
-      state.ozz->model_matrices.resize(num_joints);
-      state.ozz->cache.Resize(num_joints);
     } else {
       state.loaded.failed = true;
     }
@@ -349,12 +507,8 @@ static void skeleton_data_loaded(const sfetch_response_t *response) {
 
 static void animation_data_loaded(const sfetch_response_t *response) {
   if (response->fetched) {
-    ozz::io::MemoryStream stream;
-    stream.Write(response->data.ptr, response->data.size);
-    stream.Seek(0, ozz::io::Stream::kSet);
-    ozz::io::IArchive archive(&stream);
-    if (archive.TestTag<ozz::animation::Animation>()) {
-      archive >> state.ozz->animation;
+    if (OZZ_load_animation(state.ozz, response->data.ptr,
+                           response->data.size)) {
       state.loaded.animation = true;
     } else {
       state.loaded.failed = true;

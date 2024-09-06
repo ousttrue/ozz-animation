@@ -42,9 +42,10 @@ struct ozz_t {
   ozz::vector<ozz::math::SoaTransform> local_matrices;
   ozz::vector<ozz::math::Float4x4> model_matrices;
   //     int num_skeleton_joints;    // number of joints in the skeleton
-  int num_skin_joints;  // number of joints actually used by skinned mesh
+  int num_skin_joints; // number of joints actually used by skinned mesh
   ozz::vector<uint16_t> joint_remaps;
   ozz::vector<ozz::math::Float4x4> mesh_inverse_bindposes;
+  std::vector<int> is_leaf;
 };
 
 ozz_t *OZZ_init() { return new ozz_t; }
@@ -189,6 +190,15 @@ const short *OZZ_joint_parents(ozz_t *p) {
   return p->skeleton.joint_parents().data();
 }
 
+const int *OZZ_is_leaf(ozz_t *p) {
+  p->is_leaf.clear();
+  auto num_joints = p->skeleton.num_joints();
+  for (int i = 0; i < num_joints; ++i) {
+    p->is_leaf.push_back(IsLeaf(p->skeleton, i));
+  }
+  return p->is_leaf.data();
+}
+
 const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
                             float pOutR[4], float pOutS[3]) {
   auto t = ozz::animation::GetJointLocalRestPose(ozz->skeleton, joint_index);
@@ -261,4 +271,4 @@ void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
 
 DECLSPEC void OZZ_free(void *p) { free(p); }
 
-}  // extern "C"
+} // extern "C"

@@ -50,6 +50,10 @@ pub fn build(
             "src/animation/offline/track_optimizer.cc",
             "src/options/options.cc",
             "src/geometry/runtime/skinning_job.cc",
+
+            "samples/framework/mesh.cc",
+
+            "ozz_wrap.cpp",
         },
     });
     lib.addIncludePath(b.path("include"));

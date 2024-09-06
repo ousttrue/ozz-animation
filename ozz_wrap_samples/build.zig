@@ -1,5 +1,6 @@
 const std = @import("std");
 const zcc = @import("../zcc.zig");
+const shdc = @import("../shdc.zig");
 
 const Sample = struct {
     name: []const u8,
@@ -8,6 +9,7 @@ const Sample = struct {
     cpp_files: []const []const u8 = &.{},
     cpp_flags: []const []const u8 = &.{},
     libs: []const []const u8 = &.{},
+    shader: ?[]const u8 = null,
     fn build(
         self: @This(),
         b: *std.Build,
@@ -20,6 +22,10 @@ const Sample = struct {
             .optimize = optimize,
             .name = self.name,
         });
+        exe.addIncludePath(b.path(""));
+        if (self.shader) |shader| {
+            exe.step.dependOn(shdc.sokolShdc(b, target, shader));
+        }
 
         // c
         exe.linkLibC();
@@ -103,5 +109,6 @@ const samples = [_]Sample{
         .libs = &.{
             "gdi32",
         },
+        .shader = "ozz_wrap_samples/playback/bone.glsl",
     },
 };

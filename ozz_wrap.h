@@ -29,6 +29,7 @@ DECLSPEC void OZZ_eval_animation(ozz_t *p, float anim_ratio);
 DECLSPEC float OZZ_duration(ozz_t *p);
 DECLSPEC size_t OZZ_num_joints(ozz_t *p);
 DECLSPEC const short *OZZ_joint_parents(ozz_t *p);
+DECLSPEC const int *OZZ_is_leaf(ozz_t *p);
 DECLSPEC const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index,
                                      float pOutT[3], float pOutR[4],
                                      float pOutS[3]);
