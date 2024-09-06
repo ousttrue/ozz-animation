@@ -80,7 +80,7 @@ pub fn build(b: *std.Build) void {
         }
 
         if (!target.result.isWasm()) {
-            ozz_wrap_samples.build(b, target, optimize);
+            ozz_wrap_samples.build(b, target, optimize, ozz.lib);
         }
     }
 }

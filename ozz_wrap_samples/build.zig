@@ -13,6 +13,7 @@ const Sample = struct {
         b: *std.Build,
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
+        ozz_lib: *std.Build.Step.Compile,
     ) void {
         const exe = b.addExecutable(.{
             .target = target,
@@ -36,9 +37,28 @@ const Sample = struct {
         for (self.libs) |lib| {
             exe.linkSystemLibrary(lib);
         }
+        exe.linkLibrary(ozz_lib);
 
+        // sokol
         const sokol_dep = b.dependency("sokol", .{});
         exe.addIncludePath(sokol_dep.path(""));
+        exe.addIncludePath(sokol_dep.path("util"));
+
+        // imgui
+        const imgui_dep = b.dependency("imgui", .{});
+        exe.addIncludePath(imgui_dep.path(""));
+        exe.addCSourceFiles(.{
+            .root = imgui_dep.path(""),
+            .files = &.{
+                "imgui.cpp",
+                "imgui_widgets.cpp",
+                "imgui_draw.cpp",
+                "imgui_tables.cpp",
+            },
+        });
+
+        // ozz
+        exe.addIncludePath(b.path("include"));
 
         const install = b.addInstallArtifact(exe, .{});
         b.getInstallStep().dependOn(&install.step);
@@ -59,22 +79,22 @@ pub fn build(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
+    ozz: *std.Build.Step.Compile,
 ) void {
     for (samples) |sample| {
-        sample.build(b, target, optimize);
+        sample.build(b, target, optimize, ozz);
     }
 }
 
 const samples = [_]Sample{
     .{
         .name = "ozz_wrap_playback",
-        .c_files = &.{
-            "ozz_wrap_samples/playback/main.c",
-        },
+        .c_files = &.{},
         .c_flags = &.{
             "-std=c99",
         },
         .cpp_files = &.{
+            "ozz_wrap_samples/playback/main.cpp",
             "ozz_wrap_samples/playback/sample_playback.cc",
         },
         .cpp_flags = &.{
