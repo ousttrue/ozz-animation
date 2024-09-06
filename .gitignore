@@ -9,6 +9,7 @@ prefix_*
 
 # zig
 .zig-cache
+zig-cache
 zig-out
 # clangd
 .cache

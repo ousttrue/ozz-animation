@@ -17,7 +17,9 @@ const cimgui = @import("cimgui");
 const rowmath = @import("rowmath");
 const InputState = rowmath.InputState;
 const MouseCamera = rowmath.MouseCamera;
+const Mat4 = rowmath.Mat4;
 const utils = @import("utils.zig");
+const bone = @import("bone.zig");
 
 var skel_data_buffer: [4 * 1024]u8 = undefined;
 var anim_data_buffer: [32 * 1024]u8 = undefined;
@@ -91,6 +93,8 @@ export fn init() void {
         .callback = animation_data_loaded,
         .buffer = sokol.fetch.asRange(&anim_data_buffer),
     });
+
+    bone.init();
 }
 
 export fn frame() void {
@@ -114,6 +118,12 @@ export fn frame() void {
     });
     draw_ui();
 
+    sg.beginPass(.{
+        .action = state.pass_action,
+        .swapchain = sokol.glue.swapchain(),
+    });
+    // sgl_draw();
+
     if (state.loaded.animation and state.loaded.skeleton) {
         if (!state.time.paused) {
             state.time.absolute += state.time.frame * state.time.factor;
@@ -136,13 +146,56 @@ export fn frame() void {
         //         (const ozz::math::Float4x4 *)OZZ_model_matrices(state.ozz, 0);
         //     state.renderer.DrawPosture(state.ozz, ozz::span{pMatrix, num},
         //                                ozz::math::Float4x4::identity(), true);
+
+        const num_joints = c.OZZ_num_joints(state.ozz);
+        const parents = c.OZZ_joint_parents(state.ozz);
+        const _matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+        for (0..num_joints) |i| {
+            // Root isn't rendered.
+            const parent_id = parents[i];
+            if (parent_id == std.math.maxInt(u16)) {
+                continue;
+            }
+
+            // Selects joint matrices.
+            const parent = _matrices[@intCast(parent_id)];
+            const current = _matrices[i];
+
+            // Copy parent joint's raw matrix, to render a bone between the parent
+            // and current matrix.
+            var uniform = parent;
+
+            // Set bone direction (bone_dir). The shader expects to find it at index
+            // [3,7,11] of the matrix.
+            // Index 15 is used to store whether a bone should be rendered,
+            // otherwise it's a leaf.
+            // float bone_dir[4];
+            // const bone_dir = current.row3().sub(parent.row3());
+            uniform.m[3] = current.row3().x - parent.row3().x;
+            uniform.m[7] = current.row3().y - parent.row3().y;
+            uniform.m[11] = current.row3().z - parent.row3().z;
+            uniform.m[15] = 1.0; // Enables bone rendering.
+
+            // // Only the joint is rendered for leaves, the bone model isn't.
+            // if (IsLeaf(_skeleton, i)) {
+            //   // Copy current joint's raw matrix.
+            //   std::memcpy(uniform, current.cols, 16 * sizeof(float));
+            //
+            //   // Re-use bone_dir to fix the size of the leaf (same as previous bone).
+            //   // The shader expects to find it at index [3,7,11] of the matrix.
+            //   uniform[3] = bone_dir[0];
+            //   uniform[7] = bone_dir[1];
+            //   uniform[11] = bone_dir[2];
+            //   uniform[15] = 0.f;  // Disables bone rendering.
+            //   ++instances;
+            // }
+            bone.draw(.{
+                .camera = state.camera.viewProjectionMatrix(),
+                .joint = uniform,
+            });
+        }
     }
 
-    sg.beginPass(.{
-        .action = state.pass_action,
-        .swapchain = sokol.glue.swapchain(),
-    });
-    // sgl_draw();
     sokol.imgui.render();
     sg.endPass();
     sg.commit();

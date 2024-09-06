@@ -186,8 +186,8 @@ void OZZ_eval_animation(ozz_t *p, float anim_ratio) {
 
 float OZZ_duration(ozz_t *p) { return p->animation.duration(); }
 size_t OZZ_num_joints(ozz_t *p) { return p->skeleton.num_joints(); }
-const short *OZZ_joint_parents(ozz_t *p) {
-  return p->skeleton.joint_parents().data();
+const unsigned short *OZZ_joint_parents(ozz_t *p) {
+  return (const unsigned short *)p->skeleton.joint_parents().data();
 }
 
 const int *OZZ_is_leaf(ozz_t *p) {
@@ -213,8 +213,8 @@ const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
   }
 }
 
-const float *OZZ_model_matrices(ozz_t *ozz, size_t joint_index) {
-  return (float *)&ozz->model_matrices[joint_index];
+const float *OZZ_model_matrices(ozz_t *ozz) {
+  return (float *)ozz->model_matrices.data();
 }
 
 void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
