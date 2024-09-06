@@ -2,6 +2,7 @@ pub const Sample = struct {
     name: []const u8,
     cfiles: []const []const u8,
     includes: []const []const u8 = &.{},
+    windows_libs: []const []const u8 = &.{},
     sokol_shader: ?[]const u8 = null,
     use_gtest: bool = false,
 };
@@ -10,6 +11,10 @@ pub const samples = [_]Sample{
     .{
         .name = "playback",
         .cfiles = &.{"samples/playback/sample_playback.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "attach",

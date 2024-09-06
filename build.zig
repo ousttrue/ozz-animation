@@ -2,11 +2,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const zcc = @import("zcc.zig");
 const shdc = @import("shdc.zig");
+const ozz_wrap_samples = @import("ozz_wrap_samples/build.zig");
 
-const libs = [_][]const u8{
-    // "OpenGL32",
-    "Gdi32",
-};
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -54,7 +51,7 @@ pub fn build(b: *std.Build) void {
             framework.link(b, exe);
             ozz.link(b, exe);
             glfw.link(b, exe);
-            for (libs) |lib| {
+            for (sample.windows_libs) |lib| {
                 exe.linkSystemLibrary(lib);
             }
             b.installArtifact(exe);
@@ -80,6 +77,10 @@ pub fn build(b: *std.Build) void {
                 b.fmt("Run {s}", .{sample.name}),
             );
             step.dependOn(&run.step);
+        }
+
+        if (!target.result.isWasm()) {
+            ozz_wrap_samples.build(b, target, optimize);
         }
     }
 }
