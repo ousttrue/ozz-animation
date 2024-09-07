@@ -88,17 +88,6 @@ pub fn build(
 const samples = [_]Sample{
     .{
         .name = "ozz_wrap_playback",
-        .c_files = &.{},
-        .c_flags = &.{
-            "-std=c99",
-        },
-        .cpp_files = &.{
-            // "ozz_wrap_samples/playback/main.cpp",
-            "ozz_wrap_samples/playback/sample_playback.cc",
-        },
-        .cpp_flags = &.{
-            "-std=c++20",
-        },
         .zig_root_source = "ozz_wrap_samples/playback/main.zig",
         .libs = &.{
             "gdi32",

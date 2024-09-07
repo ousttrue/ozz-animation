@@ -45,12 +45,14 @@ struct ozz_t {
   int num_skin_joints; // number of joints actually used by skinned mesh
   ozz::vector<uint16_t> joint_remaps;
   ozz::vector<ozz::math::Float4x4> mesh_inverse_bindposes;
-  std::vector<int> is_leaf;
 };
 
 ozz_t *OZZ_init() { return new ozz_t; }
 void OZZ_shutdown(ozz_t *p) { delete (p); }
 
+//
+// skeleton
+//
 bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size) {
   // NOTE: if we derived our own ozz::io::Stream class we could
   // avoid the extra allocation and memory copy that happens
@@ -72,6 +74,37 @@ bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size) {
   }
 }
 
+size_t OZZ_num_joints(ozz_t *p) { return p->skeleton.num_joints(); }
+
+const unsigned short *OZZ_joint_parents(ozz_t *p) {
+  return (const unsigned short *)p->skeleton.joint_parents().data();
+}
+
+const char *const *OZZ_joint_names(ozz_t *p) {
+  return p->skeleton.joint_names().data();
+}
+
+const bool OZZ_joint_is_leaf(ozz_t *p, size_t i) {
+  return IsLeaf(p->skeleton, i);
+}
+
+const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
+                            float pOutR[4], float pOutS[3]) {
+  auto t = ozz::animation::GetJointLocalRestPose(ozz->skeleton, joint_index);
+  if (pOutT) {
+    *((ozz::math::Float3 *)pOutT) = t.translation;
+  }
+  if (pOutR) {
+    *((ozz::math::Quaternion *)pOutR) = t.rotation;
+  }
+  if (pOutS) {
+    *((ozz::math::Float3 *)pOutS) = t.scale;
+  }
+}
+
+//
+// animation
+//
 bool OZZ_load_animation(ozz_t *p, const void *ptr, size_t size) {
   ozz::io::MemoryStream stream;
   stream.Write(ptr, size);
@@ -85,6 +118,86 @@ bool OZZ_load_animation(ozz_t *p, const void *ptr, size_t size) {
   }
 }
 
+void OZZ_eval_animation(ozz_t *p, float anim_ratio) {
+  // sample animation
+  ozz::animation::SamplingJob sampling_job;
+  sampling_job.animation = &p->animation;
+  sampling_job.context = &p->context;
+  sampling_job.ratio = anim_ratio;
+  sampling_job.output = make_span(p->local_matrices);
+  sampling_job.Run();
+
+  // convert joint matrices from local to model space
+  ozz::animation::LocalToModelJob ltm_job;
+  ltm_job.skeleton = &p->skeleton;
+  ltm_job.input = make_span(p->local_matrices);
+  ltm_job.output = make_span(p->model_matrices);
+  ltm_job.Run();
+}
+
+float OZZ_duration(ozz_t *p) { return p->animation.duration(); }
+
+const float *OZZ_model_matrices(ozz_t *ozz) {
+  return (float *)ozz->model_matrices.data();
+}
+
+// void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
+//                        float *joint_upload_buffer, int max_joints) {
+//   auto anim_duration = p->animation.duration();
+//   for (int instance = 0; instance < num_instances; instance++) {
+//     // each character instance evaluates its own animation
+//     const float anim_ratio =
+//         fmodf(((float)abs_time_sec + (instance * 0.1f)) /
+//         anim_duration, 1.0f);
+//
+//     // sample animation
+//     // NOTE: using one cache per instance versus one cache per animation
+//     // makes a small difference, but not much
+//     ozz::animation::SamplingJob sampling_job;
+//     sampling_job.animation = &p->animation;
+//     sampling_job.context = &p->context;
+//     sampling_job.ratio = anim_ratio;
+//     sampling_job.output = make_span(p->local_matrices);
+//     sampling_job.Run();
+//
+//     // convert joint matrices from local to model space
+//     ozz::animation::LocalToModelJob ltm_job;
+//     ltm_job.skeleton = &p->skeleton;
+//     ltm_job.input = make_span(p->local_matrices);
+//     ltm_job.output = make_span(p->model_matrices);
+//     ltm_job.Run();
+//
+//     // compute skinning matrices and write to joint texture upload buffer
+//     auto ptr = &joint_upload_buffer[instance * max_joints * 12];
+//     for (int i = 0; i < p->num_skin_joints; i++) {
+//       ozz::math::Float4x4 skin_matrix =
+//           p->model_matrices[p->joint_remaps[i]] *
+//           p->mesh_inverse_bindposes[i];
+//       const ozz::math::SimdFloat4 &c0 = skin_matrix.cols[0];
+//       const ozz::math::SimdFloat4 &c1 = skin_matrix.cols[1];
+//       const ozz::math::SimdFloat4 &c2 = skin_matrix.cols[2];
+//       const ozz::math::SimdFloat4 &c3 = skin_matrix.cols[3];
+//
+//       // float *ptr = &joint_upload_buffer[instance * (i * max_joints) * 12];
+//       *ptr++ = ozz::math::GetX(c0);
+//       *ptr++ = ozz::math::GetX(c1);
+//       *ptr++ = ozz::math::GetX(c2);
+//       *ptr++ = ozz::math::GetX(c3);
+//       *ptr++ = ozz::math::GetY(c0);
+//       *ptr++ = ozz::math::GetY(c1);
+//       *ptr++ = ozz::math::GetY(c2);
+//       *ptr++ = ozz::math::GetY(c3);
+//       *ptr++ = ozz::math::GetZ(c0);
+//       *ptr++ = ozz::math::GetZ(c1);
+//       *ptr++ = ozz::math::GetZ(c2);
+//       *ptr++ = ozz::math::GetZ(c3);
+//     }
+//   }
+// }
+
+//
+// mesh
+//
 static uint32_t pack_u32(uint8_t x, uint8_t y, uint8_t z, uint8_t w) {
   return (uint32_t)(((uint32_t)w << 24) | ((uint32_t)z << 16) |
                     ((uint32_t)y << 8) | x);
@@ -166,109 +279,5 @@ bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size, void **_vertices,
 
   return true;
 }
-
-void OZZ_eval_animation(ozz_t *p, float anim_ratio) {
-  // sample animation
-  ozz::animation::SamplingJob sampling_job;
-  sampling_job.animation = &p->animation;
-  sampling_job.context = &p->context;
-  sampling_job.ratio = anim_ratio;
-  sampling_job.output = make_span(p->local_matrices);
-  sampling_job.Run();
-
-  // convert joint matrices from local to model space
-  ozz::animation::LocalToModelJob ltm_job;
-  ltm_job.skeleton = &p->skeleton;
-  ltm_job.input = make_span(p->local_matrices);
-  ltm_job.output = make_span(p->model_matrices);
-  ltm_job.Run();
-}
-
-float OZZ_duration(ozz_t *p) { return p->animation.duration(); }
-size_t OZZ_num_joints(ozz_t *p) { return p->skeleton.num_joints(); }
-const unsigned short *OZZ_joint_parents(ozz_t *p) {
-  return (const unsigned short *)p->skeleton.joint_parents().data();
-}
-
-const int *OZZ_is_leaf(ozz_t *p) {
-  p->is_leaf.clear();
-  auto num_joints = p->skeleton.num_joints();
-  for (int i = 0; i < num_joints; ++i) {
-    p->is_leaf.push_back(IsLeaf(p->skeleton, i));
-  }
-  return p->is_leaf.data();
-}
-
-const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
-                            float pOutR[4], float pOutS[3]) {
-  auto t = ozz::animation::GetJointLocalRestPose(ozz->skeleton, joint_index);
-  if (pOutT) {
-    *((ozz::math::Float3 *)pOutT) = t.translation;
-  }
-  if (pOutR) {
-    *((ozz::math::Quaternion *)pOutR) = t.rotation;
-  }
-  if (pOutS) {
-    *((ozz::math::Float3 *)pOutS) = t.scale;
-  }
-}
-
-const float *OZZ_model_matrices(ozz_t *ozz) {
-  return (float *)ozz->model_matrices.data();
-}
-
-void OZZ_update_joints(ozz_t *p, int num_instances, float abs_time_sec,
-                       float *joint_upload_buffer, int max_joints) {
-  auto anim_duration = p->animation.duration();
-  for (int instance = 0; instance < num_instances; instance++) {
-    // each character instance evaluates its own animation
-    const float anim_ratio =
-        fmodf(((float)abs_time_sec + (instance * 0.1f)) / anim_duration, 1.0f);
-
-    // sample animation
-    // NOTE: using one cache per instance versus one cache per animation
-    // makes a small difference, but not much
-    ozz::animation::SamplingJob sampling_job;
-    sampling_job.animation = &p->animation;
-    sampling_job.context = &p->context;
-    sampling_job.ratio = anim_ratio;
-    sampling_job.output = make_span(p->local_matrices);
-    sampling_job.Run();
-
-    // convert joint matrices from local to model space
-    ozz::animation::LocalToModelJob ltm_job;
-    ltm_job.skeleton = &p->skeleton;
-    ltm_job.input = make_span(p->local_matrices);
-    ltm_job.output = make_span(p->model_matrices);
-    ltm_job.Run();
-
-    // compute skinning matrices and write to joint texture upload buffer
-    auto ptr = &joint_upload_buffer[instance * max_joints * 12];
-    for (int i = 0; i < p->num_skin_joints; i++) {
-      ozz::math::Float4x4 skin_matrix =
-          p->model_matrices[p->joint_remaps[i]] * p->mesh_inverse_bindposes[i];
-      const ozz::math::SimdFloat4 &c0 = skin_matrix.cols[0];
-      const ozz::math::SimdFloat4 &c1 = skin_matrix.cols[1];
-      const ozz::math::SimdFloat4 &c2 = skin_matrix.cols[2];
-      const ozz::math::SimdFloat4 &c3 = skin_matrix.cols[3];
-
-      // float *ptr = &joint_upload_buffer[instance * (i * max_joints) * 12];
-      *ptr++ = ozz::math::GetX(c0);
-      *ptr++ = ozz::math::GetX(c1);
-      *ptr++ = ozz::math::GetX(c2);
-      *ptr++ = ozz::math::GetX(c3);
-      *ptr++ = ozz::math::GetY(c0);
-      *ptr++ = ozz::math::GetY(c1);
-      *ptr++ = ozz::math::GetY(c2);
-      *ptr++ = ozz::math::GetY(c3);
-      *ptr++ = ozz::math::GetZ(c0);
-      *ptr++ = ozz::math::GetZ(c1);
-      *ptr++ = ozz::math::GetZ(c2);
-      *ptr++ = ozz::math::GetZ(c3);
-    }
-  }
-}
-
-DECLSPEC void OZZ_free(ozz_t *p) { free(p); }
 
 } // extern "C"

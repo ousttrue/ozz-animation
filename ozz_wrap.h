@@ -18,27 +18,34 @@ extern "C" {
 
 typedef struct ozz_t ozz_t;
 
+// ozz
 DECLSPEC ozz_t *OZZ_init();
 DECLSPEC void OZZ_shutdown(ozz_t *p);
+
+// skeleton
 DECLSPEC bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size);
-DECLSPEC bool OZZ_load_animation(ozz_t *p, const void *ptr, size_t size);
-DECLSPEC bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size,
-                            void **vertices, int *num_vertices, void **indices,
-                            int *num_triangle_indices);
-DECLSPEC void OZZ_eval_animation(ozz_t *p, float anim_ratio);
-DECLSPEC float OZZ_duration(ozz_t *p);
 DECLSPEC size_t OZZ_num_joints(ozz_t *p);
 DECLSPEC const unsigned short *OZZ_joint_parents(ozz_t *p);
-DECLSPEC const int *OZZ_is_leaf(ozz_t *p);
+DECLSPEC const char *const *OZZ_joint_names(ozz_t *p);
+DECLSPEC const bool OZZ_joint_is_leaf(ozz_t *p, size_t i);
 DECLSPEC const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index,
                                      float pOutT[3], float pOutR[4],
                                      float pOutS[3]);
+
+// animation
+DECLSPEC bool OZZ_load_animation(ozz_t *p, const void *ptr, size_t size);
+DECLSPEC void OZZ_eval_animation(ozz_t *p, float anim_ratio);
+DECLSPEC float OZZ_duration(ozz_t *p);
 DECLSPEC const float *OZZ_model_matrices(ozz_t *ozz);
-DECLSPEC void OZZ_update_joints(ozz_t *ozz, int num_instances,
-                                float abs_time_sec, float *joint_upload_buffer,
-                                int max_joints);
-DECLSPEC void OZZ_free(ozz_t *p);
+
+// mesh
+DECLSPEC bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size,
+                            void **vertices, int *num_vertices, void **indices,
+                            int *num_triangle_indices);
+// DECLSPEC void OZZ_update_joints(ozz_t *ozz, int num_instances,
+//                                 float abs_time_sec, float
+//                                 *joint_upload_buffer, int max_joints);
 
 #ifdef __cplusplus
-}  // extern "C"
+} // extern "C"
 #endif

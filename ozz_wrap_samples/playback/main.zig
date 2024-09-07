@@ -24,14 +24,39 @@ const bone = @import("bone.zig");
 var skel_data_buffer: [4 * 1024]u8 = undefined;
 var anim_data_buffer: [32 * 1024]u8 = undefined;
 
+const SkeletonJoint = struct {
+    name: [*:0]const u8,
+    is_leaf: bool,
+    parent: ?u16,
+};
+
+const Skeleton = struct {
+    allocator: std.mem.Allocator,
+    joints: []SkeletonJoint,
+
+    fn init(allocator: std.mem.Allocator, size: usize) !@This() {
+        var list = std.ArrayList(SkeletonJoint).init(allocator);
+        try list.resize(size);
+        const skeleton = Skeleton{
+            .allocator = allocator,
+            .joints = try list.toOwnedSlice(),
+        };
+        list.deinit();
+        return skeleton;
+    }
+
+    fn deinit(self: *@This()) void {
+        self.allocator.free(self.joints);
+    }
+};
+
 const state = struct {
     var input: InputState = .{};
     var camera: MouseCamera = .{};
     var ozz: ?*c.ozz_t = null;
     var pass_action = sg.PassAction{};
-    // camera_t camera;
     const loaded = struct {
-        var skeleton = false;
+        var skeleton: ?Skeleton = null;
         var animation = false;
         var failed = false;
     };
@@ -43,7 +68,6 @@ const state = struct {
         var anim_ratio_ui_override = false;
         var paused = false;
     };
-    //   Renderer renderer;
 };
 
 export fn init() void {
@@ -122,77 +146,66 @@ export fn frame() void {
         .action = state.pass_action,
         .swapchain = sokol.glue.swapchain(),
     });
-    // sgl_draw();
 
-    if (state.loaded.animation and state.loaded.skeleton) {
-        if (!state.time.paused) {
-            state.time.absolute += state.time.frame * state.time.factor;
-        }
-
-        // convert current time to animation ration (0.0 .. 1.0)
-        const anim_duration = c.OZZ_duration(state.ozz);
-        if (!state.time.anim_ratio_ui_override) {
-            state.time.anim_ratio =
-                std.math.mod(
-                f32,
-                @floatCast(state.time.absolute / anim_duration),
-                1.0,
-            ) catch unreachable;
-        }
-        c.OZZ_eval_animation(state.ozz, state.time.anim_ratio);
-
-        //     size_t num = OZZ_num_joints(state.ozz);
-        //     auto pMatrix =
-        //         (const ozz::math::Float4x4 *)OZZ_model_matrices(state.ozz, 0);
-        //     state.renderer.DrawPosture(state.ozz, ozz::span{pMatrix, num},
-        //                                ozz::math::Float4x4::identity(), true);
-
-        const num_joints = c.OZZ_num_joints(state.ozz);
-        const parents = c.OZZ_joint_parents(state.ozz);
-        const _matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
-        for (0..num_joints) |i| {
-            // Root isn't rendered.
-            const parent_id = parents[i];
-            if (parent_id == std.math.maxInt(u16)) {
-                continue;
+    if (state.loaded.animation) {
+        if (state.loaded.skeleton) |skeleton| {
+            if (!state.time.paused) {
+                state.time.absolute += state.time.frame * state.time.factor;
             }
 
-            // Selects joint matrices.
-            const parent = _matrices[@intCast(parent_id)];
-            const current = _matrices[i];
+            // convert current time to animation ration (0.0 .. 1.0)
+            const anim_duration = c.OZZ_duration(state.ozz);
+            if (!state.time.anim_ratio_ui_override) {
+                state.time.anim_ratio =
+                    std.math.mod(
+                    f32,
+                    @floatCast(state.time.absolute / anim_duration),
+                    1.0,
+                ) catch unreachable;
+            }
+            c.OZZ_eval_animation(state.ozz, state.time.anim_ratio);
 
-            // Copy parent joint's raw matrix, to render a bone between the parent
-            // and current matrix.
-            var uniform = parent;
+            const _matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+            for (skeleton.joints, 0..) |joint, i| {
+                // Root isn't rendered.
+                if (joint.parent) |parent_id| {
 
-            // Set bone direction (bone_dir). The shader expects to find it at index
-            // [3,7,11] of the matrix.
-            // Index 15 is used to store whether a bone should be rendered,
-            // otherwise it's a leaf.
-            // float bone_dir[4];
-            // const bone_dir = current.row3().sub(parent.row3());
-            uniform.m[3] = current.row3().x - parent.row3().x;
-            uniform.m[7] = current.row3().y - parent.row3().y;
-            uniform.m[11] = current.row3().z - parent.row3().z;
-            uniform.m[15] = 1.0; // Enables bone rendering.
+                    // Selects joint matrices.
+                    const parent = _matrices[@intCast(parent_id)];
+                    const current = _matrices[i];
 
-            // // Only the joint is rendered for leaves, the bone model isn't.
-            // if (IsLeaf(_skeleton, i)) {
-            //   // Copy current joint's raw matrix.
-            //   std::memcpy(uniform, current.cols, 16 * sizeof(float));
-            //
-            //   // Re-use bone_dir to fix the size of the leaf (same as previous bone).
-            //   // The shader expects to find it at index [3,7,11] of the matrix.
-            //   uniform[3] = bone_dir[0];
-            //   uniform[7] = bone_dir[1];
-            //   uniform[11] = bone_dir[2];
-            //   uniform[15] = 0.f;  // Disables bone rendering.
-            //   ++instances;
-            // }
-            bone.draw(.{
-                .camera = state.camera.viewProjectionMatrix(),
-                .joint = uniform,
-            });
+                    // Copy parent joint's raw matrix, to render a bone between the parent
+                    // and current matrix.
+                    var uniform = parent;
+
+                    // Set bone direction (bone_dir). The shader expects to find it at index
+                    // [3,7,11] of the matrix.
+                    // Index 15 is used to store whether a bone should be rendered,
+                    // otherwise it's a leaf.
+                    uniform.m[3] = current.row3().x - parent.row3().x;
+                    uniform.m[7] = current.row3().y - parent.row3().y;
+                    uniform.m[11] = current.row3().z - parent.row3().z;
+                    uniform.m[15] = 1.0; // Enables bone rendering.
+
+                    // // Only the joint is rendered for leaves, the bone model isn't.
+                    // if (IsLeaf(_skeleton, i)) {
+                    //   // Copy current joint's raw matrix.
+                    //   std::memcpy(uniform, current.cols, 16 * sizeof(float));
+                    //
+                    //   // Re-use bone_dir to fix the size of the leaf (same as previous bone).
+                    //   // The shader expects to find it at index [3,7,11] of the matrix.
+                    //   uniform[3] = bone_dir[0];
+                    //   uniform[7] = bone_dir[1];
+                    //   uniform[11] = bone_dir[2];
+                    //   uniform[15] = 0.f;  // Disables bone rendering.
+                    //   ++instances;
+                    // }
+                    bone.draw(.{
+                        .camera = state.camera.viewProjectionMatrix(),
+                        .joint = uniform,
+                    });
+                }
+            }
         }
     }
 
@@ -239,22 +252,22 @@ fn draw_ui() void {
                 "%.1f",
                 1.0,
             );
-            // cimgui.igSliderFloat(
-            //     "Latitude",
-            //     &state.camera.latitude,
-            //     state.camera.min_lat,
-            //     state.camera.max_lat,
-            //     "%.1f",
-            //     1.0,
-            // );
-            // cimgui.igSliderFloat(
-            //     "Longitude",
-            //     &state.camera.longitude,
-            //     0.0,
-            //     360.0,
-            //     "%.1f",
-            //     1.0,
-            // );
+            _ = cimgui.igSliderFloat(
+                "Latitude",
+                &state.camera.camera.yaw,
+                -std.math.pi,
+                std.math.pi,
+                "%.1f",
+                1.0,
+            );
+            _ = cimgui.igSliderFloat(
+                "Longitude",
+                &state.camera.camera.pitch,
+                -std.math.pi,
+                std.math.pi,
+                "%.1f",
+                1.0,
+            );
             cimgui.igSeparator();
             cimgui.igText("Time Controls:");
             _ = cimgui.igCheckbox("Paused", &state.time.paused);
@@ -287,7 +300,20 @@ fn draw_ui() void {
 export fn skeleton_data_loaded(response: [*c]const sokol.fetch.Response) void {
     if (response.*.fetched) {
         if (c.OZZ_load_skeleton(state.ozz, response.*.data.ptr, response.*.data.size)) {
-            state.loaded.skeleton = true;
+            const num_joints = c.OZZ_num_joints(state.ozz);
+            var skeleton = Skeleton.init(std.heap.page_allocator, num_joints) catch unreachable;
+            const parents = c.OZZ_joint_parents(state.ozz);
+            const names: [*]const [*:0]const u8 = @ptrCast(c.OZZ_joint_names(state.ozz));
+            for (0..num_joints) |i| {
+                const parent: u16 = parents[i];
+                // std.debug.print("name: {s}\n", .{names[i]});
+                skeleton.joints[i] = .{
+                    .name = names[i],
+                    .parent = if (std.math.maxInt(u16) != parent) parent else null,
+                    .is_leaf = c.OZZ_joint_is_leaf(state.ozz, i),
+                };
+            }
+            state.loaded.skeleton = skeleton;
         } else {
             state.loaded.failed = true;
         }
