@@ -19,55 +19,107 @@ pub const samples = [_]Sample{
     .{
         .name = "attach",
         .cfiles = &.{"samples/attach/sample_attach.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "blend",
         .cfiles = &.{"samples/blend/sample_blend.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "partial_blend",
         .cfiles = &.{"samples/partial_blend/sample_partial_blend.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "additive",
         .cfiles = &.{"samples/additive/sample_additive.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "baked",
         .cfiles = &.{"samples/baked/sample_baked.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "user_channel",
         .cfiles = &.{"samples/user_channel/sample_user_channel.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "optimize",
         .cfiles = &.{"samples/optimize/sample_optimize.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "millipede",
         .cfiles = &.{"samples/millipede/sample_millipede.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "two_bone_ik",
         .cfiles = &.{"samples/two_bone_ik/sample_two_bone_ik.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "look_at",
         .cfiles = &.{"samples/look_at/sample_look_at.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "foot_ik",
         .cfiles = &.{"samples/foot_ik/sample_foot_ik.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
     .{
         .name = "skinning",
         .cfiles = &.{"samples/skinning/sample_skinning.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
 
     .{
         .name = "multithread",
         .cfiles = &.{"samples/multithread/sample_multithread.cc"},
+        .windows_libs = &.{
+            "OpenGL32",
+            "Gdi32",
+        },
     },
 
     // tool
@@ -142,39 +194,5 @@ pub const samples = [_]Sample{
             "test/base/maths/vec_float_tests.cc",
         },
         .use_gtest = true,
-    },
-    // https://github.com/CU-Production/ozz_test.git
-    .{
-        .name = "ozz_anim",
-        .cfiles = &.{
-            "samples/ozz_anim/ozz_anim.cpp",
-            "extern/imgui/imgui.cpp",
-            "extern/imgui/imgui_demo.cpp",
-            "extern/imgui/imgui_draw.cpp",
-            "extern/imgui/imgui_widgets.cpp",
-            "extern/imgui/imgui_tables.cpp",
-        },
-        .includes = &.{
-            "extern/sokol",
-            "extern/sokol/util",
-            "extern/imgui",
-        },
-    },
-    .{
-        .name = "ozz_skin",
-        .cfiles = &.{
-            "samples/ozz_skin/ozz_skin.cpp",
-            "extern/imgui/imgui.cpp",
-            "extern/imgui/imgui_demo.cpp",
-            "extern/imgui/imgui_draw.cpp",
-            "extern/imgui/imgui_widgets.cpp",
-            "extern/imgui/imgui_tables.cpp",
-        },
-        .includes = &.{
-            "extern/sokol",
-            "extern/sokol/util",
-            "extern/imgui",
-        },
-        .sokol_shader = "samples/ozz_skin/ozz_skin.glsl",
     },
 };

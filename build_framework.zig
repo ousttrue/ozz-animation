@@ -27,6 +27,7 @@ pub fn build(
             "samples/framework/internal/shooter.cc",
         },
     });
+    lib.addIncludePath(b.path("extern/glfw/include"));
     lib.addIncludePath(b.path("samples"));
     for (deps) |dep| {
         dep.link(b, lib);

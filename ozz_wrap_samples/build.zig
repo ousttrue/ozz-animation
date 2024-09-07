@@ -1,6 +1,7 @@
 const std = @import("std");
 const zcc = @import("../zcc.zig");
 const shdc = @import("../shdc.zig");
+const SokolLib = @import("../build_sokol_and_imgui.zig").SokolLib;
 
 const Sample = struct {
     name: []const u8,
@@ -11,12 +12,14 @@ const Sample = struct {
     zig_root_source: ?[]const u8 = null,
     libs: []const []const u8 = &.{},
     shader: ?[]const u8 = null,
+
     fn build(
         self: @This(),
         b: *std.Build,
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
         ozz_lib: *std.Build.Step.Compile,
+        sokol: SokolLib,
     ) void {
         const exe = b.addExecutable(.{
             .target = target,
@@ -27,6 +30,7 @@ const Sample = struct {
         exe.addIncludePath(b.path(""));
         if (self.shader) |shader| {
             exe.step.dependOn(shdc.shdc_zig(b, target, shader));
+            sokol.inject_zig(exe);
         }
 
         // c
@@ -41,62 +45,11 @@ const Sample = struct {
             .files = self.cpp_files,
             .flags = self.cpp_flags,
         });
-        exe.addCSourceFile(.{
-            .file = b.path("custom_button_behaviour.cpp"),
-        });
         // libs
         for (self.libs) |lib| {
             exe.linkSystemLibrary(lib);
         }
         exe.linkLibrary(ozz_lib);
-
-        // create file tree for cimgui and imgui
-        const cimgui_dep = b.dependency("cimgui", .{});
-        const imgui_dep = b.dependency("imgui", .{});
-        const wf = b.addNamedWriteFiles("cimgui");
-        _ = wf.addCopyDirectory(cimgui_dep.path(""), "", .{});
-        _ = wf.addCopyDirectory(imgui_dep.path(""), "imgui", .{});
-        const root = wf.getDirectory();
-        exe.addIncludePath(root);
-        exe.addCSourceFiles(.{
-            .root = root,
-            .files = &.{
-                b.pathJoin(&.{"cimgui.cpp"}),
-                b.pathJoin(&.{ "imgui", "imgui.cpp" }),
-                b.pathJoin(&.{ "imgui", "imgui_widgets.cpp" }),
-                b.pathJoin(&.{ "imgui", "imgui_draw.cpp" }),
-                b.pathJoin(&.{ "imgui", "imgui_tables.cpp" }),
-                b.pathJoin(&.{ "imgui", "imgui_demo.cpp" }),
-            },
-        });
-
-        // sokol
-        const sokol_dep = b.dependency("sokol", .{
-            .target = target,
-            .optimize = optimize,
-            .with_sokol_imgui = true,
-        });
-        exe.root_module.addImport("sokol", sokol_dep.module("sokol"));
-        sokol_dep.artifact("sokol_clib").addIncludePath(root);
-
-        // translate-c the cimgui.h file
-        // NOTE: always run this with the host target, that way we don't need to inject
-        // the Emscripten SDK include path into the translate-C step when building for WASM
-        const cimgui_h = cimgui_dep.path("cimgui.h");
-        const translateC = b.addTranslateC(.{
-            .root_source_file = cimgui_h,
-            .target = b.host,
-            .optimize = optimize,
-        });
-        translateC.defineCMacroRaw("CIMGUI_DEFINE_ENUMS_AND_STRUCTS=\"\"");
-        const entrypoint = translateC.getOutput();
-        // build cimgui as a module with the header file as the entrypoint
-        const mod_cimgui = b.addModule("cimgui", .{
-            .root_source_file = entrypoint,
-            .target = target,
-            .optimize = optimize,
-        });
-        exe.root_module.addImport("cimgui", mod_cimgui);
 
         // rowmath
         const rowmath_dep = b.dependency("rowmath", .{});
@@ -125,9 +78,10 @@ pub fn build(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     ozz: *std.Build.Step.Compile,
+    sokol: SokolLib,
 ) void {
     for (samples) |sample| {
-        sample.build(b, target, optimize, ozz);
+        sample.build(b, target, optimize, ozz, sokol);
     }
 }
 

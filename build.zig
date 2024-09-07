@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 const zcc = @import("zcc.zig");
 const shdc = @import("shdc.zig");
 const ozz_wrap_samples = @import("ozz_wrap_samples/build.zig");
+const build_sokol_and_imgui = @import("build_sokol_and_imgui.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -18,6 +19,7 @@ pub fn build(b: *std.Build) void {
         const build_framework = @import("build_framework.zig");
         const build_ozz = @import("build_ozz.zig");
         const build_glfw = @import("build_glfw.zig");
+        const sokol = build_sokol_and_imgui.build(b, target, optimize);
 
         const ozz = build_ozz.build(b, target, optimize);
         const glfw = build_glfw.build(b, target, optimize);
@@ -45,6 +47,9 @@ pub fn build(b: *std.Build) void {
                     "-std=c++20",
                 },
             });
+            sokol.inject_lib(exe);
+            exe.addIncludePath(b.path(""));
+            exe.addIncludePath(b.path("extern/glfw/include"));
             for (sample.includes) |include| {
                 exe.addIncludePath(b.path(include));
             }
@@ -80,7 +85,13 @@ pub fn build(b: *std.Build) void {
         }
 
         if (!target.result.isWasm()) {
-            ozz_wrap_samples.build(b, target, optimize, ozz.lib);
+            ozz_wrap_samples.build(
+                b,
+                target,
+                optimize,
+                ozz.lib,
+                sokol,
+            );
         }
     }
 }

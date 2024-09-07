@@ -1,5 +1,5 @@
 #define SOKOL_IMPL
-#define SOKOL_GLCORE33
+#define SOKOL_GLCORE
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
@@ -7,9 +7,9 @@
 
 #define SOKOL_GL_IMPL
 #include "imgui.h"
-#include "util/sokol_gl.h"
+#include "sokol_gl.h"
 #define SOKOL_IMGUI_IMPL
-#include "util/sokol_imgui.h"
+#include "sokol_imgui.h"
 
 #define HANDMADE_MATH_IMPLEMENTATION
 #define HANDMADE_MATH_NO_SSE

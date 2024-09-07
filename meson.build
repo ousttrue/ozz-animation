@@ -36,7 +36,6 @@ srcs = [
     # 'src/animation/runtime/track_triggering_job.cc',
 
     'samples/framework/mesh.cc',
-    'samples/framework/internal/renderer_impl.cc',
 ]
 ozz_inc = include_directories('include')
 

@@ -7,13 +7,13 @@
 #include "sokol_glue.h"
 
 #define SOKOL_GL_IMPL
-#include "util/sokol_gl.h"
+#include "sokol_gl.h"
 
 #include "imgui.h"
 #define SOKOL_IMGUI_IMPL
-#include "util/sokol_imgui.h"
-#define SOKOL_GFX_IMGUI_IMPL
-#include "util/sokol_gfx_imgui.h"
+#include "sokol_imgui.h"
+// #define SOKOL_GFX_IMGUI_IMPL
+// #include "sokol_gfx_imgui.h"
 
 #define HANDMADE_MATH_IMPLEMENTATION
 #define HANDMADE_MATH_NO_SSE
