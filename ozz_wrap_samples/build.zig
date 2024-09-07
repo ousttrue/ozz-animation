@@ -21,7 +21,7 @@ const Sample = struct {
         ozz_lib: *std.Build.Step.Compile,
         sokol: SokolLib,
         utils: *std.Build.Module,
-        utils_shader_step: *std.Build.Step,
+        utils_shader_steps: []const *std.Build.Step,
         rowmath_module: *std.Build.Module,
     ) void {
         const exe = b.addExecutable(.{
@@ -31,7 +31,9 @@ const Sample = struct {
             .root_source_file = if (self.zig_root_source) |src| b.path(src) else null,
         });
         exe.root_module.addImport("utils", utils);
-        exe.step.dependOn(utils_shader_step);
+        for (utils_shader_steps) |shader_step| {
+            exe.step.dependOn(shader_step);
+        }
 
         exe.addIncludePath(b.path(""));
         sokol.inject_zig(exe);
@@ -85,7 +87,10 @@ pub fn build(
     const utils = b.addModule("utils", .{
         .root_source_file = b.path("ozz_wrap_samples/utils/utils.zig"),
     });
-    const utils_shader_step = shdc.shdc_zig(b, target, "ozz_wrap_samples/utils/bone.glsl");
+    const utils_shader_steps = [2]*std.Build.Step{
+        shdc.shdc_zig(b, target, "ozz_wrap_samples/utils/bone.glsl"),
+        shdc.shdc_zig(b, target, "ozz_wrap_samples/utils/joint.glsl"),
+    };
 
     const rowmath_dep = b.dependency("rowmath", .{});
     const rowmath_module = rowmath_dep.module("rowmath");
@@ -100,7 +105,7 @@ pub fn build(
             ozz,
             sokol,
             utils,
-            utils_shader_step,
+            &utils_shader_steps,
             rowmath_module,
         );
     }

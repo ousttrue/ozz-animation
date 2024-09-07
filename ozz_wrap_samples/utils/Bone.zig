@@ -1,3 +1,4 @@
+const std = @import("std");
 const sokol = @import("sokol");
 const sg = sokol.gfx;
 const shader = @import("bone.glsl.zig");
@@ -26,8 +27,20 @@ const VertexPNC = struct {
     color: Color,
 };
 
-pub fn init_bone(state: *@This()) void {
-    const kInter: f32 = 0.2;
+const kInter: f32 = 0.2;
+// Prepares joint mesh.
+const kNumSlices = 20;
+const kNumPointsPerCircle = kNumSlices + 1;
+const kNumPointsYZ = kNumPointsPerCircle;
+const kNumPointsXY = kNumPointsPerCircle + kNumPointsPerCircle / 4;
+const kNumPointsXZ = kNumPointsPerCircle;
+const kNumPoints = kNumPointsXY + kNumPointsXZ + kNumPointsYZ;
+const kRadius = kInter; // Radius multiplier.
+const red = Color{ .r = 0xff, .g = 0xc0, .b = 0xc0, .a = 0xff };
+const green = Color{ .r = 0xc0, .g = 0xff, .b = 0xc0, .a = 0xff };
+const blue = Color{ .r = 0xc0, .g = 0xc0, .b = 0xff, .a = 0xff };
+
+pub fn makeBoneVertices() [24]VertexPNC {
 
     // Prepares bone mesh.
     const pos = [6]Vec3{
@@ -77,11 +90,16 @@ pub fn init_bone(state: *@This()) void {
         .{ .pos = pos[1], .normal = normals[7], .color = white },
     };
 
+    return bones;
+}
+
+pub fn init(state: *@This()) void {
+    const vertices = makeBoneVertices();
     state.bind.vertex_buffers[0] = sg.makeBuffer(.{
-        .data = sg.asRange(&bones),
+        .data = sg.asRange(&vertices),
         .label = "bone-vertices",
     });
-    state.draw_count = 24;
+    state.draw_count = vertices.len;
 
     // create shader
     const shd = sg.makeShader(shader.boneShaderDesc(sg.queryBackend()));

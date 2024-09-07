@@ -1,6 +1,6 @@
 const sokol = @import("sokol");
 const rowmath = @import("rowmath");
-pub const Bone = @import("_Bone.zig");
+pub const Bone = @import("Bone.zig");
 pub const Skeleton = @import("Skeleton.zig");
 
 pub fn handle_camera_input(

@@ -1,7 +1,8 @@
 const std = @import("std");
 const rowmath = @import("rowmath");
 const Mat4 = rowmath.Mat4;
-const Bone = @import("_Bone.zig");
+const Bone = @import("Bone.zig");
+const Joint = @import("Joint.zig");
 
 pub const SkeletonJoint = struct {
     name: [*:0]const u8,
@@ -14,6 +15,7 @@ const Skeleton = @This();
 allocator: std.mem.Allocator,
 joints: []SkeletonJoint,
 bone: Bone = .{},
+joint: Joint = .{},
 
 pub fn init(allocator: std.mem.Allocator, size: usize) !@This() {
     var list = std.ArrayList(SkeletonJoint).init(allocator);
@@ -23,7 +25,8 @@ pub fn init(allocator: std.mem.Allocator, size: usize) !@This() {
         .joints = try list.toOwnedSlice(),
     };
     list.deinit();
-    skeleton.bone.init_bone();
+    skeleton.bone.init();
+    skeleton.joint.init();
     return skeleton;
 }
 
@@ -58,6 +61,16 @@ pub fn draw(
             uniform.m[11] = bone_dir.z;
             uniform.m[15] = 1.0; // Enables bone rendering.
 
+            self.joint.draw(.{
+                .camera = viewProjection,
+                .joint = uniform,
+            });
+
+            self.bone.draw(.{
+                .camera = viewProjection,
+                .joint = uniform,
+            });
+
             // Only the joint is rendered for leaves, the bone model isn't.
             if (joint.is_leaf) {
                 // Copy current joint's raw matrix.
@@ -68,9 +81,9 @@ pub fn draw(
                 uniform.m[3] = bone_dir.x;
                 uniform.m[7] = bone_dir.y;
                 uniform.m[11] = bone_dir.z;
-                uniform.m[15] = 0.0; // Disables bone rendering.
-            } else {
-                self.bone.draw(.{
+                // uniform.m[15] = 0.0; // Disables bone rendering.
+
+                self.joint.draw(.{
                     .camera = viewProjection,
                     .joint = uniform,
                 });
