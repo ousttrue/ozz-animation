@@ -53,20 +53,11 @@ export fn init() void {
         .environment = sokol.glue.environment(),
         .logger = .{ .func = sokol.log.func },
     });
-
-    // setup sokol-fetch
-    sokol.fetch.setup(.{
-        .max_requests = 2,
-        .num_channels = 1,
-        .num_lanes = 2,
-        .logger = .{ .func = sokol.log.func },
-    });
-
-    // setup sokol-gl
     sokol.gl.setup(.{
         .sample_count = sokol.app.sampleCount(),
         .logger = .{ .func = sokol.log.func },
     });
+    utils.gl_init();
 
     // setup sokol-imgui
     sokol.imgui.setup(.{ .logger = .{ .func = sokol.log.func } });
@@ -78,6 +69,14 @@ export fn init() void {
     };
 
     state.camera.init();
+
+    // setup sokol-fetch
+    sokol.fetch.setup(.{
+        .max_requests = 2,
+        .num_channels = 1,
+        .num_lanes = 2,
+        .logger = .{ .func = sokol.log.func },
+    });
 
     // start loading the skeleton and animation files
     _ = sokol.fetch.send(.{
@@ -114,39 +113,49 @@ export fn frame() void {
     });
     draw_ui();
 
-    sg.beginPass(.{
-        .action = state.pass_action,
-        .swapchain = sokol.glue.swapchain(),
+    utils.gl_begin(.{
+        .view = state.camera.camera.transform.worldToLocal(),
+        .projection = state.camera.camera.projection_matrix,
     });
+    utils.draw_axis();
+    utils.gl_end();
 
-    if (state.loaded.animation) {
-        if (state.loaded.skeleton) |skeleton| {
-            if (!state.time.paused) {
-                state.time.absolute += state.time.frame * state.time.factor;
+    {
+        sg.beginPass(.{
+            .action = state.pass_action,
+            .swapchain = sokol.glue.swapchain(),
+        });
+        defer sg.endPass();
+
+        utils.gl_draw();
+        if (state.loaded.animation) {
+            if (state.loaded.skeleton) |skeleton| {
+                if (!state.time.paused) {
+                    state.time.absolute += state.time.frame * state.time.factor;
+                }
+
+                // convert current time to animation ration (0.0 .. 1.0)
+                const anim_duration = c.OZZ_duration(state.ozz);
+                if (!state.time.anim_ratio_ui_override) {
+                    state.time.anim_ratio =
+                        std.math.mod(
+                        f32,
+                        @floatCast(state.time.absolute / anim_duration),
+                        1.0,
+                    ) catch unreachable;
+                }
+                c.OZZ_eval_animation(state.ozz, state.time.anim_ratio);
+
+                const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+                skeleton.draw(
+                    state.camera.viewProjectionMatrix(),
+                    matrices,
+                );
             }
-
-            // convert current time to animation ration (0.0 .. 1.0)
-            const anim_duration = c.OZZ_duration(state.ozz);
-            if (!state.time.anim_ratio_ui_override) {
-                state.time.anim_ratio =
-                    std.math.mod(
-                    f32,
-                    @floatCast(state.time.absolute / anim_duration),
-                    1.0,
-                ) catch unreachable;
-            }
-            c.OZZ_eval_animation(state.ozz, state.time.anim_ratio);
-
-            const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
-            skeleton.draw(
-                state.camera.viewProjectionMatrix(),
-                matrices,
-            );
         }
-    }
 
-    sokol.imgui.render();
-    sg.endPass();
+        sokol.imgui.render();
+    }
     sg.commit();
 }
 

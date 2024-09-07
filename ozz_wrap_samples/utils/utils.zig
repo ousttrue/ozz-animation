@@ -2,6 +2,7 @@ const sokol = @import("sokol");
 const rowmath = @import("rowmath");
 pub const Bone = @import("Bone.zig");
 pub const Skeleton = @import("Skeleton.zig");
+pub usingnamespace @import("draw_gl.zig");
 
 pub fn handle_camera_input(
     e: [*c]const sokol.app.Event,
