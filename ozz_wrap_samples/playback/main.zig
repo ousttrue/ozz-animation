@@ -19,36 +19,10 @@ const InputState = rowmath.InputState;
 const MouseCamera = rowmath.MouseCamera;
 const Mat4 = rowmath.Mat4;
 const utils = @import("utils");
-const bone = utils.bone;
+const Skeleton = utils.Skeleton;
 
 var skel_data_buffer: [4 * 1024]u8 = undefined;
 var anim_data_buffer: [32 * 1024]u8 = undefined;
-
-const SkeletonJoint = struct {
-    name: [*:0]const u8,
-    is_leaf: bool,
-    parent: ?u16,
-};
-
-const Skeleton = struct {
-    allocator: std.mem.Allocator,
-    joints: []SkeletonJoint,
-
-    fn init(allocator: std.mem.Allocator, size: usize) !@This() {
-        var list = std.ArrayList(SkeletonJoint).init(allocator);
-        try list.resize(size);
-        const skeleton = Skeleton{
-            .allocator = allocator,
-            .joints = try list.toOwnedSlice(),
-        };
-        list.deinit();
-        return skeleton;
-    }
-
-    fn deinit(self: *@This()) void {
-        self.allocator.free(self.joints);
-    }
-};
 
 const state = struct {
     var input: InputState = .{};
@@ -117,8 +91,6 @@ export fn init() void {
         .callback = animation_data_loaded,
         .buffer = sokol.fetch.asRange(&anim_data_buffer),
     });
-
-    bone.init();
 }
 
 export fn frame() void {
@@ -165,47 +137,11 @@ export fn frame() void {
             }
             c.OZZ_eval_animation(state.ozz, state.time.anim_ratio);
 
-            const _matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
-            for (skeleton.joints, 0..) |joint, i| {
-                // Root isn't rendered.
-                if (joint.parent) |parent_id| {
-
-                    // Selects joint matrices.
-                    const parent = _matrices[@intCast(parent_id)];
-                    const current = _matrices[i];
-
-                    // Copy parent joint's raw matrix, to render a bone between the parent
-                    // and current matrix.
-                    var uniform = parent;
-
-                    // Set bone direction (bone_dir). The shader expects to find it at index
-                    // [3,7,11] of the matrix.
-                    // Index 15 is used to store whether a bone should be rendered,
-                    // otherwise it's a leaf.
-                    uniform.m[3] = current.row3().x - parent.row3().x;
-                    uniform.m[7] = current.row3().y - parent.row3().y;
-                    uniform.m[11] = current.row3().z - parent.row3().z;
-                    uniform.m[15] = 1.0; // Enables bone rendering.
-
-                    // // Only the joint is rendered for leaves, the bone model isn't.
-                    // if (IsLeaf(_skeleton, i)) {
-                    //   // Copy current joint's raw matrix.
-                    //   std::memcpy(uniform, current.cols, 16 * sizeof(float));
-                    //
-                    //   // Re-use bone_dir to fix the size of the leaf (same as previous bone).
-                    //   // The shader expects to find it at index [3,7,11] of the matrix.
-                    //   uniform[3] = bone_dir[0];
-                    //   uniform[7] = bone_dir[1];
-                    //   uniform[11] = bone_dir[2];
-                    //   uniform[15] = 0.f;  // Disables bone rendering.
-                    //   ++instances;
-                    // }
-                    bone.draw(.{
-                        .camera = state.camera.viewProjectionMatrix(),
-                        .joint = uniform,
-                    });
-                }
-            }
+            const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+            skeleton.draw(
+                state.camera.viewProjectionMatrix(),
+                matrices,
+            );
         }
     }
 

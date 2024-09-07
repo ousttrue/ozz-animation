@@ -5,11 +5,12 @@ const rowmath = @import("rowmath");
 const Vec3 = rowmath.Vec3;
 const Mat4 = rowmath.Mat4;
 
-const state = struct {
-    var pip = sg.Pipeline{};
-    var bind = sg.Bindings{};
-    var pass_action = sg.PassAction{};
-};
+const Bone = @This();
+
+pip: sg.Pipeline = .{},
+bind: sg.Bindings = .{},
+pass_action: sg.PassAction = .{},
+draw_count: u32 = 0,
 
 // A vertex made of positions and normals.
 const Color = struct {
@@ -25,7 +26,7 @@ const VertexPNC = struct {
     color: Color,
 };
 
-pub fn init() void {
+pub fn init_bone(state: *@This()) void {
     const kInter: f32 = 0.2;
 
     // Prepares bone mesh.
@@ -80,6 +81,7 @@ pub fn init() void {
         .data = sg.asRange(&bones),
         .label = "bone-vertices",
     });
+    state.draw_count = 24;
 
     // create shader
     const shd = sg.makeShader(shader.boneShaderDesc(sg.queryBackend()));
@@ -105,7 +107,8 @@ pub const DrawOpts = struct {
     camera: Mat4,
     joint: Mat4,
 };
-pub fn draw(opts: DrawOpts) void {
+
+pub fn draw(state: @This(), opts: DrawOpts) void {
     sg.applyPipeline(state.pip);
     sg.applyBindings(state.bind);
     const vs_params = shader.VsParams{
@@ -113,5 +116,5 @@ pub fn draw(opts: DrawOpts) void {
         .u_mvp = opts.camera.m,
     };
     sg.applyUniforms(.VS, shader.SLOT_vs_params, sg.asRange(&vs_params));
-    sg.draw(0, 24, 1);
+    sg.draw(0, state.draw_count, 1);
 }
