@@ -96,6 +96,7 @@ pub fn build(
     const rowmath_module = rowmath_dep.module("rowmath");
     utils.addImport("rowmath", rowmath_module);
     utils.addImport("sokol", sokol.sokol_mod);
+    utils.addImport("cimgui", sokol.cimgui_mod);
 
     for (samples) |sample| {
         sample.build(

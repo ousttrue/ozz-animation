@@ -29,24 +29,12 @@ const state = struct {
     var camera: MouseCamera = .{};
     var ozz: ?*c.ozz_t = null;
     var pass_action = sg.PassAction{};
-    const loaded = struct {
-        var skeleton: ?Skeleton = null;
-        var animation = false;
-        var failed = false;
-    };
-    const time = struct {
-        var frame: f64 = 0;
-        var absolute: f64 = 0;
-        var factor: f32 = 0;
-        var anim_ratio: f32 = 0;
-        var anim_ratio_ui_override = false;
-        var paused = false;
-    };
+    var ozz_state = utils.State{};
 };
 
 export fn init() void {
     state.ozz = c.OZZ_init();
-    state.time.factor = 1.0;
+    state.ozz_state.time.factor = 1.0;
 
     // setup sokol-gfx
     sg.setup(.{
@@ -97,7 +85,7 @@ export fn frame() void {
 
     const fb_width = sokol.app.width();
     const fb_height = sokol.app.height();
-    state.time.frame = sokol.app.frameDuration();
+    state.ozz_state.time.frame = sokol.app.frameDuration();
 
     // update camera
     state.input.screen_width = sokol.app.widthf();
@@ -105,14 +93,16 @@ export fn frame() void {
     state.camera.frame(state.input);
     state.input.mouse_wheel = 0;
 
+    // draw ui
     sokol.imgui.newFrame(.{
         .width = fb_width,
         .height = fb_height,
-        .delta_time = state.time.frame,
+        .delta_time = state.ozz_state.time.frame,
         .dpi_scale = sokol.app.dpiScale(),
     });
-    draw_ui();
+    utils.draw_ui(&state.ozz_state, &state.camera.camera);
 
+    // draw axis & grid
     utils.gl_begin(.{
         .view = state.camera.camera.transform.worldToLocal(),
         .projection = state.camera.camera.projection_matrix,
@@ -121,6 +111,7 @@ export fn frame() void {
     utils.draw_grid(20, 1.0);
     utils.gl_end();
 
+    // render
     {
         sg.beginPass(.{
             .action = state.pass_action,
@@ -129,23 +120,11 @@ export fn frame() void {
         defer sg.endPass();
 
         utils.gl_draw();
-        if (state.loaded.animation) {
-            if (state.loaded.skeleton) |skeleton| {
-                if (!state.time.paused) {
-                    state.time.absolute += state.time.frame * state.time.factor;
-                }
-
-                // convert current time to animation ration (0.0 .. 1.0)
-                const anim_duration = c.OZZ_duration(state.ozz);
-                if (!state.time.anim_ratio_ui_override) {
-                    state.time.anim_ratio =
-                        std.math.mod(
-                        f32,
-                        @floatCast(state.time.absolute / anim_duration),
-                        1.0,
-                    ) catch unreachable;
-                }
-                c.OZZ_eval_animation(state.ozz, state.time.anim_ratio);
+        if (state.ozz_state.loaded.animation) {
+            if (state.ozz_state.loaded.skeleton) |skeleton| {
+                const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
+                // const anim_duration = ;
+                c.OZZ_eval_animation(state.ozz, anim_ratio);
 
                 const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
                 skeleton.draw(
@@ -177,72 +156,6 @@ export fn cleanup() void {
     state.ozz = null;
 }
 
-fn draw_ui() void {
-    cimgui.igSetNextWindowPos(.{ .x = 20, .y = 20 }, cimgui.ImGuiCond_Once, .{ .x = 0, .y = 0 });
-    cimgui.igSetNextWindowSize(.{ .x = 220, .y = 150 }, cimgui.ImGuiCond_Once);
-    cimgui.igSetNextWindowBgAlpha(0.35);
-    if (cimgui.igBegin("Controls", null, cimgui.ImGuiWindowFlags_NoDecoration |
-        cimgui.ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        if (state.loaded.failed) {
-            cimgui.igText("Failed loading character data!");
-        } else {
-            cimgui.igText("Camera Controls:");
-            cimgui.igText("  LMB + Mouse Move: Look");
-            cimgui.igText("  Mouse Wheel: Zoom");
-            _ = cimgui.igSliderFloat(
-                "Distance",
-                &state.camera.camera.shift.z,
-                0,
-                100,
-                "%.1f",
-                1.0,
-            );
-            _ = cimgui.igSliderFloat(
-                "Latitude",
-                &state.camera.camera.yaw,
-                -std.math.pi,
-                std.math.pi,
-                "%.1f",
-                1.0,
-            );
-            _ = cimgui.igSliderFloat(
-                "Longitude",
-                &state.camera.camera.pitch,
-                -std.math.pi,
-                std.math.pi,
-                "%.1f",
-                1.0,
-            );
-            cimgui.igSeparator();
-            cimgui.igText("Time Controls:");
-            _ = cimgui.igCheckbox("Paused", &state.time.paused);
-            _ = cimgui.igSliderFloat(
-                "Factor",
-                &state.time.factor,
-                0.0,
-                10.0,
-                "%.1f",
-                1.0,
-            );
-            if (cimgui.igSliderFloat(
-                "Ratio",
-                &state.time.anim_ratio,
-                0.0,
-                1.0,
-                null,
-                0,
-            )) {
-                state.time.anim_ratio_ui_override = true;
-            }
-            if (cimgui.igIsItemDeactivatedAfterEdit()) {
-                state.time.anim_ratio_ui_override = false;
-            }
-        }
-    }
-    cimgui.igEnd();
-}
-
 export fn skeleton_data_loaded(response: [*c]const sokol.fetch.Response) void {
     if (response.*.fetched) {
         if (c.OZZ_load_skeleton(state.ozz, response.*.data.ptr, response.*.data.size)) {
@@ -252,31 +165,30 @@ export fn skeleton_data_loaded(response: [*c]const sokol.fetch.Response) void {
             const names: [*]const [*:0]const u8 = @ptrCast(c.OZZ_joint_names(state.ozz));
             for (0..num_joints) |i| {
                 const parent: u16 = parents[i];
-                // std.debug.print("name: {s}\n", .{names[i]});
                 skeleton.joints[i] = .{
                     .name = names[i],
                     .parent = if (std.math.maxInt(u16) != parent) parent else null,
                     .is_leaf = c.OZZ_joint_is_leaf(state.ozz, i),
                 };
             }
-            state.loaded.skeleton = skeleton;
+            state.ozz_state.loaded.skeleton = skeleton;
         } else {
-            state.loaded.failed = true;
+            state.ozz_state.loaded.failed = true;
         }
     } else if (response.*.failed) {
-        state.loaded.failed = true;
+        state.ozz_state.loaded.failed = true;
     }
 }
 
 export fn animation_data_loaded(response: [*c]const sokol.fetch.Response) void {
     if (response.*.fetched) {
         if (c.OZZ_load_animation(state.ozz, response.*.data.ptr, response.*.data.size)) {
-            state.loaded.animation = true;
+            state.ozz_state.loaded.animation = true;
         } else {
-            state.loaded.failed = true;
+            state.ozz_state.loaded.failed = true;
         }
     } else if (response.*.failed) {
-        state.loaded.failed = true;
+        state.ozz_state.loaded.failed = true;
     }
 }
 
