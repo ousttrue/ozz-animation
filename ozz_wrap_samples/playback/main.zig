@@ -18,8 +18,8 @@ const rowmath = @import("rowmath");
 const InputState = rowmath.InputState;
 const MouseCamera = rowmath.MouseCamera;
 const Mat4 = rowmath.Mat4;
-const utils = @import("utils.zig");
-const bone = @import("bone.zig");
+const utils = @import("utils");
+const bone = utils.bone;
 
 var skel_data_buffer: [4 * 1024]u8 = undefined;
 var anim_data_buffer: [32 * 1024]u8 = undefined;

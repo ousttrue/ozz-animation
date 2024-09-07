@@ -20,6 +20,9 @@ const Sample = struct {
         optimize: std.builtin.OptimizeMode,
         ozz_lib: *std.Build.Step.Compile,
         sokol: SokolLib,
+        utils: *std.Build.Module,
+        utils_shader_step: *std.Build.Step,
+        rowmath_module: *std.Build.Module,
     ) void {
         const exe = b.addExecutable(.{
             .target = target,
@@ -27,11 +30,11 @@ const Sample = struct {
             .name = self.name,
             .root_source_file = if (self.zig_root_source) |src| b.path(src) else null,
         });
+        exe.root_module.addImport("utils", utils);
+        exe.step.dependOn(utils_shader_step);
+
         exe.addIncludePath(b.path(""));
-        if (self.shader) |shader| {
-            exe.step.dependOn(shdc.shdc_zig(b, target, shader));
-            sokol.inject_zig(exe);
-        }
+        sokol.inject_zig(exe);
 
         // c
         exe.linkLibC();
@@ -52,8 +55,7 @@ const Sample = struct {
         exe.linkLibrary(ozz_lib);
 
         // rowmath
-        const rowmath_dep = b.dependency("rowmath", .{});
-        exe.root_module.addImport("rowmath", rowmath_dep.module("rowmath"));
+        exe.root_module.addImport("rowmath", rowmath_module);
 
         // ozz
         exe.addIncludePath(b.path("include"));
@@ -80,8 +82,27 @@ pub fn build(
     ozz: *std.Build.Step.Compile,
     sokol: SokolLib,
 ) void {
+    const utils = b.addModule("utils", .{
+        .root_source_file = b.path("ozz_wrap_samples/utils/utils.zig"),
+    });
+    const utils_shader_step = shdc.shdc_zig(b, target, "ozz_wrap_samples/utils/bone.glsl");
+
+    const rowmath_dep = b.dependency("rowmath", .{});
+    const rowmath_module = rowmath_dep.module("rowmath");
+    utils.addImport("rowmath", rowmath_module);
+    utils.addImport("sokol", sokol.sokol_mod);
+
     for (samples) |sample| {
-        sample.build(b, target, optimize, ozz, sokol);
+        sample.build(
+            b,
+            target,
+            optimize,
+            ozz,
+            sokol,
+            utils,
+            utils_shader_step,
+            rowmath_module,
+        );
     }
 }
 
@@ -92,6 +113,5 @@ const samples = [_]Sample{
         .libs = &.{
             "gdi32",
         },
-        .shader = "ozz_wrap_samples/playback/bone.glsl",
     },
 };

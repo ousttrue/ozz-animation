@@ -1,5 +1,7 @@
 const sokol = @import("sokol");
 const rowmath = @import("rowmath");
+pub const bone = @import("bone.zig");
+
 pub fn handle_camera_input(
     e: [*c]const sokol.app.Event,
     input: *rowmath.InputState,
