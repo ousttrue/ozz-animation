@@ -118,6 +118,7 @@ export fn frame() void {
         .projection = state.camera.camera.projection_matrix,
     });
     utils.draw_axis();
+    utils.draw_grid(20, 1.0);
     utils.gl_end();
 
     {
