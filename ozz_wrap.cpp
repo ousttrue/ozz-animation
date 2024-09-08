@@ -49,6 +49,21 @@ struct ozz_t {
   std::vector<unsigned short> joint_path_stack;
   ozz::animation::offline::RawSkeleton raw_skeleton;
 
+  void on_load_skeleton() {
+    const int num_soa_joints = this->skeleton.num_soa_joints();
+    const int num_joints = this->skeleton.num_joints();
+    this->local_matrices.resize(num_soa_joints);
+    this->model_matrices.resize(num_joints);
+    this->context.Resize(num_joints);
+
+    // convert joint matrices from local to model space
+    ozz::animation::LocalToModelJob ltm_job;
+    ltm_job.skeleton = &this->skeleton;
+    ltm_job.input = make_span(this->skeleton.joint_rest_poses());
+    ltm_job.output = make_span(this->model_matrices);
+    ltm_job.Run();
+  }
+
   ozz::animation::offline::RawSkeleton::Joint *
   get_joint(const unsigned short *path,
             ozz::animation::offline::RawSkeleton::Joint *current = nullptr) {
@@ -105,11 +120,9 @@ bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size) {
   ozz::io::IArchive archive(&stream);
   if (archive.TestTag<ozz::animation::Skeleton>()) {
     archive >> p->skeleton;
-    const int num_soa_joints = p->skeleton.num_soa_joints();
-    const int num_joints = p->skeleton.num_joints();
-    p->local_matrices.resize(num_soa_joints);
-    p->model_matrices.resize(num_joints);
-    p->context.Resize(num_joints);
+
+    p->on_load_skeleton();
+
     return true;
   } else {
     return false;
@@ -344,6 +357,9 @@ bool OZZ_raw_build(ozz_t *p) {
     return false;
   }
   p->skeleton = std::move(*skeleton);
+
+  p->on_load_skeleton();
+
   return true;
 }
 

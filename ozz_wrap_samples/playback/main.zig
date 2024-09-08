@@ -112,18 +112,18 @@ export fn frame() void {
         defer sg.endPass();
 
         utils.gl_draw();
-        if (state.ozz_state.loaded.animation) {
-            if (state.ozz_state.loaded.skeleton) |skeleton| {
+        if (state.ozz_state.loaded.skeleton) |skeleton| {
+            if (state.ozz_state.loaded.animation) {
                 const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
                 // const anim_duration = ;
                 c.OZZ_eval_animation(state.ozz, anim_ratio);
-
-                const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
-                skeleton.draw(
-                    state.camera.viewProjectionMatrix(),
-                    matrices,
-                );
             }
+
+            const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+            skeleton.draw(
+                state.camera.viewProjectionMatrix(),
+                matrices,
+            );
         }
 
         sokol.imgui.render();

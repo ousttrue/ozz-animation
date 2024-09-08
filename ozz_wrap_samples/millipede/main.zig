@@ -244,17 +244,32 @@ fn create_skeleton() void {
         root[0] = sp[0];
     }
 }
+
 // Procedurally builds millipede skeleton and walk animation
 fn build() void {
     // Initializes the root. The root pointer will change from a spine to the
     // next for each slice.
     create_skeleton();
-    // const num_joints = c.OZZ_raw_num_joints();
+    // const num_joints = c.OZZ_raw_num_joints(state.ozz);
 
     // Build the run time skeleton.
     if (!c.OZZ_raw_build(state.ozz)) {
         @panic("OZZ_raw_build");
     }
+    const num_joints = c.OZZ_num_joints(state.ozz);
+    // std.debug.print("create {}!\n", .{num_joints});
+    var skeleton = Skeleton.init(std.heap.page_allocator, num_joints) catch unreachable;
+    const parents = c.OZZ_joint_parents(state.ozz);
+    const names: [*]const [*:0]const u8 = @ptrCast(c.OZZ_joint_names(state.ozz));
+    for (0..num_joints) |i| {
+        const parent: u16 = parents[i];
+        skeleton.joints[i] = .{
+            .name = names[i],
+            .parent = if (std.math.maxInt(u16) != parent) parent else null,
+            .is_leaf = c.OZZ_joint_is_leaf(state.ozz, i),
+        };
+    }
+    state.ozz_state.loaded.skeleton = skeleton;
 
     // Build a walk animation.
     // RawAnimation raw_animation;
@@ -277,6 +292,7 @@ fn build() void {
     //
     // return true;
 }
+
 export fn frame() void {
     const fb_width = sokol.app.width();
     const fb_height = sokol.app.height();
@@ -315,18 +331,18 @@ export fn frame() void {
         defer sg.endPass();
 
         utils.gl_draw();
-        if (state.ozz_state.loaded.animation) {
-            if (state.ozz_state.loaded.skeleton) |skeleton| {
+        if (state.ozz_state.loaded.skeleton) |skeleton| {
+            if (state.ozz_state.loaded.animation) {
                 const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
                 // const anim_duration = ;
                 c.OZZ_eval_animation(state.ozz, anim_ratio);
-
-                const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
-                skeleton.draw(
-                    state.camera.viewProjectionMatrix(),
-                    matrices,
-                );
             }
+
+            const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+            skeleton.draw(
+                state.camera.viewProjectionMatrix(),
+                matrices,
+            );
         }
 
         sokol.imgui.render();
