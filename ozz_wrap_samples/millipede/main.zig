@@ -246,23 +246,20 @@ fn create_skeleton() void {
 }
 // Procedurally builds millipede skeleton and walk animation
 fn build() void {
-    // // Initializes the root. The root pointer will change from a spine to the
-    // // next for each slice.
-    // RawSkeleton raw_skeleton;
+    // Initializes the root. The root pointer will change from a spine to the
+    // next for each slice.
     create_skeleton();
-    // const int num_joints = raw_skeleton.num_joints();
-    //
-    // // Build the run time skeleton.
-    // ozz::animation::offline::SkeletonBuilder skeleton_builder;
-    // skeleton_ = skeleton_builder(raw_skeleton);
-    // if (!skeleton_) {
-    //   return false;
-    // }
-    //
-    // // Build a walk animation.
+    // const num_joints = c.OZZ_raw_num_joints();
+
+    // Build the run time skeleton.
+    if (!c.OZZ_raw_build(state.ozz)) {
+        @panic("OZZ_raw_build");
+    }
+
+    // Build a walk animation.
     // RawAnimation raw_animation;
     // CreateAnimation(&raw_animation);
-    //
+
     // // Build the run time animation from the raw animation.
     // ozz::animation::offline::AnimationBuilder animation_builder;
     // animation_ = animation_builder(raw_animation);

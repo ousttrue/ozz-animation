@@ -13,7 +13,9 @@
 #include "ozz/base/io/stream.h"
 #include "ozz/base/maths/soa_transform.h"
 #include "ozz/animation/runtime/sampling_job.h"
+
 #include "ozz/animation/offline/raw_skeleton.h"
+#include "ozz/animation/offline/skeleton_builder.h"
 
 // #include "samples/framework/mesh.h"
 
@@ -323,7 +325,6 @@ static uint32_t pack_f4_ubyte4n(float x, float y, float z, float w) {
 const uint16_t *OZZ_raw_skeleton_add_trs(ozz_t *p, const uint16_t *path,
                                          const char *name, const float *t,
                                          const float *r, const float *s) {
-
   auto joint = p->add_joint(path);
 
   joint->name = name;
@@ -332,6 +333,18 @@ const uint16_t *OZZ_raw_skeleton_add_trs(ozz_t *p, const uint16_t *path,
   joint->transform.scale = *((const ozz::math::Float3 *)s);
 
   return p->joint_path_stack.data();
+}
+
+size_t OZZ_raw_num_joints(ozz_t *p) { return p->raw_skeleton.num_joints(); }
+
+bool OZZ_raw_build(ozz_t *p) {
+  ozz::animation::offline::SkeletonBuilder skeleton_builder;
+  auto skeleton = skeleton_builder(p->raw_skeleton);
+  if (!skeleton) {
+    return false;
+  }
+  p->skeleton = std::move(*skeleton);
+  return true;
 }
 
 } // extern "C"

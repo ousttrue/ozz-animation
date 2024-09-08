@@ -47,9 +47,12 @@ DECLSPEC const float *OZZ_model_matrices(ozz_t *ozz);
 //                                 *joint_upload_buffer, int max_joints);
 
 // offline
-const unsigned short *OZZ_raw_skeleton_add_trs(ozz_t *p, const unsigned short *path,
-                                const char *name, const float *t,
-                                const float *r, const float *s);
+DECLSPEC const unsigned short *
+OZZ_raw_skeleton_add_trs(ozz_t *p, const unsigned short *path, const char *name,
+                         const float *t, const float *r, const float *s);
+DECLSPEC size_t OZZ_raw_num_joints(ozz_t *p);
+
+DECLSPEC bool OZZ_raw_build(ozz_t *p);
 
 #ifdef __cplusplus
 } // extern "C"
