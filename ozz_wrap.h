@@ -46,13 +46,20 @@ DECLSPEC const float *OZZ_model_matrices(ozz_t *ozz);
 //                                 float abs_time_sec, float
 //                                 *joint_upload_buffer, int max_joints);
 
-// offline
+// offline skeleton
 DECLSPEC const unsigned short *
 OZZ_raw_skeleton_add_trs(ozz_t *p, const unsigned short *path, const char *name,
                          const float *t, const float *r, const float *s);
 DECLSPEC size_t OZZ_raw_num_joints(ozz_t *p);
-
 DECLSPEC bool OZZ_raw_build(ozz_t *p);
+
+// offline animation
+DECLSPEC void OZZ_raw_animation(ozz_t *p, float duration, size_t tracks);
+DECLSPEC void OZZ_track_push_translation(ozz_t *p, size_t track_index,
+                                         float time, const float *t);
+DECLSPEC void OZZ_track_push_rotation(ozz_t *p, size_t track_index, float time,
+                                      const float *r);
+DECLSPEC bool OZZ_animation_build(ozz_t *p);
 
 #ifdef __cplusplus
 } // extern "C"

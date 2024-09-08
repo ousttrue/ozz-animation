@@ -8,7 +8,8 @@ const build_sokol_and_imgui = @import("build_sokol_and_imgui.zig");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    buildToWriteFile(b.default_step, b, target, optimize);
+    const wf = buildToWriteFile(b, target, optimize);
+    b.default_step.dependOn(wf);
 
     if (if (b.option(bool, "samples", "build samples")) |enable_samples|
         enable_samples
@@ -36,6 +37,7 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
+            exe.step.dependOn(wf);
 
             if (sample.sokol_shader) |sokol_shader| {
                 exe.step.dependOn(shdc.shdc_c(b, target, sokol_shader));
@@ -127,13 +129,11 @@ const medias = [_][]const u8{
 };
 
 fn buildToWriteFile(
-    step: *std.Build.Step,
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-) void {
+) *std.Build.Step {
     const wf = b.addNamedWriteFiles("meson_build");
-    step.dependOn(&wf.step);
     const prefix = prefixFromMesonBuild(&wf.step, b, target, optimize);
     if (target.result.isWasm()) {
         _ = wf.addCopyFile(prefix.path(b, "web/ozz-animation.wasm"), "web/ozz-animation.wasm");
@@ -149,6 +149,8 @@ fn buildToWriteFile(
             b.fmt("{s}/{s}", .{ dir, media }),
         );
     }
+
+    return &wf.step;
 }
 
 fn prefixFromMesonBuild(

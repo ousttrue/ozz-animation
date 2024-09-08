@@ -15,18 +15,6 @@ const Quat = rowmath.Quat;
 const utils = @import("utils");
 const Skeleton = utils.Skeleton;
 
-// A millipede slice is 2 legs and a spine.
-// Each slice is made of 7 joints, organized as follows.
-//          * root
-//             |
-//           spine                                   spine
-//         |       |                                   |
-//     left_up    right_up        left_down - left_u - . - right_u - right_down
-//       |           |                  |                                    |
-//   left_down     right_down     left_foot         * root            right_foot
-//     |               |
-// left_foot        right_foot
-
 const slice_count_ = 26;
 
 // The following constants are used to define the millipede skeleton and
@@ -52,12 +40,50 @@ const kWalkCycleLength: f32 = 2.0;
 const kWalkCycleCount = 4;
 const kSpinLoop: f32 = 2.0 * kWalkCycleCount * kWalkCycleLength / kSpinLength;
 
-var skel_data_buffer: [4 * 1024]u8 = undefined;
-var anim_data_buffer: [32 * 1024]u8 = undefined;
+// Defines a raw translation key frame.
+const TranslationKey = struct {
+    // Key frame time.
+    time: f32,
+
+    // Key frame value.
+    // typedef math::Float3 Value;
+    value: Vec3,
+
+    // Provides identity transformation for a translation key.
+    // static math::Float3 identity() { return math::Float3::zero(); }
+};
+
+const kPrecomputedKeys = [_]TranslationKey{
+    .{ .time = 0.0 * kDuration, .value = .{ .x = 0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.125 * kDuration, .value = .{ .x = -0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.145 * kDuration, .value = .{ .x = -0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.23 * kDuration, .value = .{ .x = 0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.25 * kDuration, .value = .{ .x = 0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.375 * kDuration, .value = .{ .x = -0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.395 * kDuration, .value = .{ .x = -0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.48 * kDuration, .value = .{ .x = 0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.5 * kDuration, .value = .{ .x = 0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.625 * kDuration, .value = .{ .x = -0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.645 * kDuration, .value = .{ .x = -0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.73 * kDuration, .value = .{ .x = 0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.75 * kDuration, .value = .{ .x = 0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.875 * kDuration, .value = .{ .x = -0.25 * kWalkCycleLength, .y = 0.0, .z = 0.0 } },
+    .{ .time = 0.895 * kDuration, .value = .{ .x = -0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+    .{ .time = 0.98 * kDuration, .value = .{ .x = 0.17 * kWalkCycleLength, .y = 0.3, .z = 0.0 } },
+};
+// const kPrecomputedKeyCount = kPrecomputedKeys.len;
 
 const state = struct {
     var input: InputState = .{};
-    var camera: MouseCamera = .{};
+    var camera: MouseCamera = .{
+        .camera = .{
+            .projection = .{
+                .perspective = .{
+                    .far_clip = 1000,
+                },
+            },
+        },
+    };
     var ozz: ?*c.ozz_t = null;
     var pass_action = sg.PassAction{};
     var ozz_state = utils.State{};
@@ -92,29 +118,59 @@ export fn init() void {
     build();
 }
 
+const JointPathPointer = [*:std.math.maxInt(u16)]const u16;
+// const JointPath= [:std.math.maxInt(u16)];
+const Current = struct {
+    list: std.ArrayList(u16),
+
+    fn init(allocator: std.mem.Allocator) @This() {
+        return .{
+            .list = std.ArrayList(u16).init(allocator),
+        };
+    }
+
+    fn set(self: *@This(), ptr: JointPathPointer) []u16 {
+        self.list.clearRetainingCapacity();
+        for (std.mem.span(ptr)) |i| {
+            self.list.append(i) catch unreachable;
+        }
+        self.list.append(std.math.maxInt(u16)) catch unreachable;
+        return self.list.items;
+    }
+};
+
+/// A millipede slice is 2 legs and a spine.
+/// Each slice is made of 7 joints, organized as follows.
+///          * root
+///             |
+///           spine                                   spine
+///         |       |                                   |
+///     left_up    right_up        left_down - left_u - . - right_u - right_down
+///       |           |                  |                                    |
+///   left_down     right_down     left_foot         * root            right_foot
+///     |               |
+/// left_foot        right_foot
 fn create_skeleton() void {
     const root_translation = Vec3{ .x = 0.0, .y = 1.0, .z = -slice_count_ * kSpinLength };
     const root_rotation = Quat.identity;
     const root_scale = Vec3.one;
 
-    var root = [1:std.math.maxInt(u16)]u16{
-        c.OZZ_raw_skeleton_add_trs(
-            state.ozz,
-            null,
-            "root",
-            &root_translation.x,
-            &root_rotation.x,
-            &root_scale.x,
-        )[0],
-    };
+    var buffer: [1000]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    var currentList = Current.init(fba.allocator());
+
+    const _root = c.OZZ_raw_skeleton_add_trs(
+        state.ozz,
+        null,
+        "root",
+        &root_translation.x,
+        &root_rotation.x,
+        &root_scale.x,
+    );
+    var root = currentList.set(@ptrCast(_root));
 
     var number: [32]u8 = undefined;
     for (0..slice_count_) |i| {
-        // Format joint number.
-        //   std::snprintf(number, sizeof(number), "%d", i);
-
-        //   root->children.resize(3);
-
         // Left leg.
         // RawSkeleton::Joint& lu = root->children[0];
         var lu: [*:std.math.maxInt(u16)]const u16 = undefined;
@@ -241,7 +297,115 @@ fn create_skeleton() void {
             ));
         }
 
-        root[0] = sp[0];
+        root = currentList.set(sp);
+    }
+}
+
+fn create_animation(skeleton: Skeleton) void {
+    c.OZZ_raw_animation(state.ozz, kDuration, skeleton.joints.len);
+
+    for (skeleton.joints, 0..) |joint, i| {
+        // RawAnimation::JointTrack& track = _animation->tracks[i];
+        // const char* joint_name = skeleton_->joint_names()[i];
+
+        if (std.mem.startsWith(
+            u8,
+            std.mem.span(joint.name),
+            "ld",
+        ) or std.mem.startsWith(
+            u8,
+            std.mem.span(joint.name),
+            "rd",
+        )) {
+            // bool left = joint_name[0] == 'l';  // First letter of "ld".
+            //
+            // // Copy original keys while taking into consideration the spine number
+            // // as a phase.
+            // const int spine_number = std::atoi(joint_name + 2);
+            // const float offset =
+            //     kDuration * (slice_count_ - spine_number) / kSpinLoop;
+            // const float phase = std::fmod(offset, kDuration);
+            //
+            // // Loop to find animation start.
+            // int i_offset = 0;
+            // while (i_offset < kPrecomputedKeyCount &&
+            //        kPrecomputedKeys[i_offset].time < phase) {
+            //   i_offset++;
+            // }
+            //
+            // // Push key with their corrected time.
+            // track.translations.reserve(kPrecomputedKeyCount);
+            // for (int j = i_offset; j < i_offset + kPrecomputedKeyCount; ++j) {
+            //   const RawAnimation::TranslationKey& rkey =
+            //       kPrecomputedKeys[j % kPrecomputedKeyCount];
+            //   float new_time = rkey.time - phase;
+            //   if (new_time < 0.f) {
+            //     new_time = kDuration - phase + rkey.time;
+            //   }
+            //
+            //   if (left) {
+            //     const RawAnimation::TranslationKey tkey = {new_time,
+            //                                                kTransDown + rkey.value};
+            //     track.translations.push_back(tkey);
+            //   } else {
+            //     const RawAnimation::TranslationKey tkey = {
+            //         new_time,
+            //         Float3(kTransDown.x - rkey.value.x, kTransDown.y + rkey.value.y,
+            //                kTransDown.z + rkey.value.z)};
+            //     track.translations.push_back(tkey);
+            //   }
+            // }
+            //
+            // // Pushes rotation key-frame.
+            // if (left) {
+            //   const RawAnimation::RotationKey rkey = {0.f, kRotLeftDown};
+            //   track.rotations.push_back(rkey);
+            // } else {
+            //   const RawAnimation::RotationKey rkey = {0.f, kRotRightDown};
+            //   track.rotations.push_back(rkey);
+            // }
+        } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "lu")) {
+            // const RawAnimation::TranslationKey tkey = {0.f, kTransUp};
+            // track.translations.push_back(tkey);
+            // c.OZZ_track_push_translation(state.ozz, i, 0, &kTransUp.x);
+            // const RawAnimation::RotationKey rkey = {0.f, kRotLeftUp};
+            // track.rotations.push_back(rkey);
+            // c.OZZ_track_push_rotation(state.ozz, i, 0, &kRotLeftUp.x);
+        } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "ru")) {
+            // const RawAnimation::TranslationKey tkey0 = {0.f, kTransUp};
+            // track.translations.push_back(tkey0);
+            // c.OZZ_track_push_translation(state.ozz, i, 0, &kTransUp.x);
+            // const RawAnimation::RotationKey rkey0 = {0.f, kRotRightUp};
+            // track.rotations.push_back(rkey0);
+            // c.OZZ_track_push_rotation(state.ozz, i, 0, &kRotRightUp.x);
+        } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "lf")) {
+            // const RawAnimation::TranslationKey tkey = {0.f, kTransFoot};
+            // track.translations.push_back(tkey);
+        } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "rf")) {
+            // const RawAnimation::TranslationKey tkey0 = {0.f, kTransFoot};
+            // track.translations.push_back(tkey0);
+        } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "sp")) {
+            // const RawAnimation::TranslationKey skey = {
+            //     0.f, Float3(0.f, 0.f, kSpinLength)};
+            // track.translations.push_back(skey);
+            //
+            // const RawAnimation::RotationKey rkey = {
+            //     0.f, ozz::math::Quaternion::identity()};
+            // track.rotations.push_back(rkey);
+        } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "root")) {
+            const tkey0 = Vec3{
+                .x = 0.0,
+                .y = 1.0,
+                .z = -slice_count_ * kSpinLength,
+            };
+            c.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
+            const tkey1 = Vec3{
+                .x = 0.0,
+                .y = 1.0,
+                .z = kWalkCycleCount * kWalkCycleLength + tkey0.z,
+            };
+            c.OZZ_track_push_translation(state.ozz, i, kDuration, &tkey1.x);
+        }
     }
 }
 
@@ -273,24 +437,12 @@ fn build() void {
 
     // Build a walk animation.
     // RawAnimation raw_animation;
-    // CreateAnimation(&raw_animation);
-
-    // // Build the run time animation from the raw animation.
-    // ozz::animation::offline::AnimationBuilder animation_builder;
-    // animation_ = animation_builder(raw_animation);
-    // if (!animation_) {
-    //   return false;
-    // }
-    //
-    // // Allocates runtime buffers.
-    // const int num_soa_joints = skeleton_->num_soa_joints();
-    // locals_.resize(num_soa_joints);
-    // models_.resize(num_joints);
-    //
-    // // Allocates a context that matches new animation requirements.
-    // context_.Resize(num_joints);
-    //
-    // return true;
+    create_animation(skeleton);
+    // Build the run time animation from the raw animation.
+    if (!c.OZZ_animation_build(state.ozz)) {
+        @panic("OZZ_animation_build");
+    }
+    state.ozz_state.loaded.animation = false;
 }
 
 export fn frame() void {

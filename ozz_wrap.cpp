@@ -17,6 +17,9 @@
 #include "ozz/animation/offline/raw_skeleton.h"
 #include "ozz/animation/offline/skeleton_builder.h"
 
+#include "ozz/animation/offline/raw_animation.h"
+#include "ozz/animation/offline/animation_builder.h"
+
 // #include "samples/framework/mesh.h"
 
 extern "C" {
@@ -48,6 +51,7 @@ struct ozz_t {
 
   std::vector<unsigned short> joint_path_stack;
   ozz::animation::offline::RawSkeleton raw_skeleton;
+  ozz::animation::offline::RawAnimation raw_animation;
 
   void on_load_skeleton() {
     const int num_soa_joints = this->skeleton.num_soa_joints();
@@ -75,11 +79,10 @@ struct ozz_t {
     if (current) {
       joint_path_stack.push_back(path[0]);
       return get_joint(path + 1, &current->children[path[0]]);
+    } else {
+      joint_path_stack.push_back(path[0]);
+      return get_joint(path + 1, &raw_skeleton.roots[path[0]]);
     }
-
-    joint_path_stack.push_back(path[0]);
-    joint_path_stack.push_back(std::numeric_limits<unsigned short>::max());
-    return &raw_skeleton.roots[path[0]];
   }
 
   ozz::animation::offline::RawSkeleton::Joint *
@@ -341,9 +344,11 @@ const uint16_t *OZZ_raw_skeleton_add_trs(ozz_t *p, const uint16_t *path,
   auto joint = p->add_joint(path);
 
   joint->name = name;
-  joint->transform.translation = *((const ozz::math::Float3 *)t);
-  joint->transform.rotation = *((const ozz::math::Quaternion *)r);
-  joint->transform.scale = *((const ozz::math::Float3 *)s);
+  joint->transform = {
+      .translation = {t[0], t[1], t[2]},
+      .rotation = {r[0], r[1], r[2], r[3]},
+      .scale = {s[0], s[1], s[2]},
+  };
 
   return p->joint_path_stack.data();
 }
@@ -359,6 +364,78 @@ bool OZZ_raw_build(ozz_t *p) {
   p->skeleton = std::move(*skeleton);
 
   p->on_load_skeleton();
+
+  return true;
+}
+
+void OZZ_raw_animation(ozz_t *p, float duration, size_t tracks) {
+  p->raw_animation.duration = duration;
+  p->raw_animation.tracks.resize(tracks);
+}
+
+void fix_translations(
+    ozz::animation::offline::RawAnimation::JointTrack::Translations
+        &translations,
+    float kDuration) {
+  if (translations.empty()) {
+    return;
+  }
+  // Make sure begin and end keys are looping.
+  // auto kDuration = raw_animation.duration;
+  // auto &track = raw_animation.tracks[track_index];
+  if (translations.front().time != 0.f) {
+    const auto &front = translations.front();
+    const auto &back = translations.back();
+    const float lerp_time = front.time / (front.time + kDuration - back.time);
+    const ozz::animation::offline::RawAnimation::TranslationKey tkey = {
+        0.f, Lerp(front.value, back.value, lerp_time)};
+
+    assert(tkey.time < translations.front().time);
+    translations.insert(translations.begin(), tkey);
+  }
+  if (translations.back().time != kDuration) {
+    const auto &front = translations.front();
+    const auto &back = translations.back();
+    const float lerp_time =
+        (kDuration - back.time) / (front.time + kDuration - back.time);
+    const ozz::animation::offline::RawAnimation::TranslationKey tkey = {
+        kDuration, Lerp(back.value, front.value, lerp_time)};
+
+    assert(tkey.time > translations.back().time);
+    translations.push_back(tkey);
+  }
+}
+
+void OZZ_track_push_translation(ozz_t *p, size_t track_index, float time,
+                                const float *t) {
+  auto &track = p->raw_animation.tracks[track_index];
+  track.translations.push_back({
+      .time = time,
+      .value = {t[0], t[1], t[2]},
+  });
+}
+
+void OZZ_track_push_rotation(ozz_t *p, size_t track_index, float time,
+                             const float *r) {
+  auto &track = p->raw_animation.tracks[track_index];
+  track.rotations.push_back({
+      .time = time,
+      .value = {r[0], r[1], r[2], r[3]},
+  });
+}
+
+bool OZZ_animation_build(ozz_t *p) {
+  for (auto &track : p->raw_animation.tracks) {
+    fix_translations(track.translations, p->raw_animation.duration);
+  }
+
+  ozz::animation::offline::AnimationBuilder animation_builder;
+  auto animation = animation_builder(p->raw_animation);
+  if (!animation) {
+    return false;
+  }
+
+  p->animation = std::move(*animation);
 
   return true;
 }
