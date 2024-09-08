@@ -120,4 +120,11 @@ const samples = [_]Sample{
             "gdi32",
         },
     },
+    .{
+        .name = "ozz_wrap_millipede",
+        .zig_root_source = "ozz_wrap_samples/millipede/main.zig",
+        .libs = &.{
+            "gdi32",
+        },
+    },
 };

@@ -1,11 +1,3 @@
-//------------------------------------------------------------------------------
-//  ozz-anim-sapp.cc
-//
-//  https://guillaumeblanc.github.io/ozz-animation/
-//
-//  Port of the ozz-animation "Animation Playback" sample. Use sokol-gl
-//  for debug-rendering the animated character skeleton (no skinning).
-//------------------------------------------------------------------------------
 const std = @import("std");
 const c = @cImport({
     @cInclude("stdbool.h");
@@ -201,7 +193,7 @@ pub fn main() void {
         .width = 800,
         .height = 600,
         .sample_count = 4,
-        .window_title = "ozz-anim-sapp.cc",
+        .window_title = "ozz_wrap_playback",
         .icon = .{ .sokol_default = true },
         .logger = .{ .func = sokol.log.func },
     });

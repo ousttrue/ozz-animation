@@ -12,9 +12,10 @@
 #include "ozz/base/io/archive.h"
 #include "ozz/base/io/stream.h"
 #include "ozz/base/maths/soa_transform.h"
-// #include "ozz/base/maths/vec_float.h"
 #include "ozz/animation/runtime/sampling_job.h"
-#include "samples/framework/mesh.h"
+#include "ozz/animation/offline/raw_skeleton.h"
+
+// #include "samples/framework/mesh.h"
 
 extern "C" {
 
@@ -36,15 +37,54 @@ static_assert(sizeof(vertex_t) == 24, "vertex_t");
 // wrapper struct for managed ozz-animation C++ objects, must be deleted
 // before shutdown, otherwise ozz-animation will report a memory leak
 struct ozz_t {
+  // runtime
   ozz::animation::Skeleton skeleton;
   ozz::animation::Animation animation;
   ozz::animation::SamplingJob::Context context;
   ozz::vector<ozz::math::SoaTransform> local_matrices;
   ozz::vector<ozz::math::Float4x4> model_matrices;
-  //     int num_skeleton_joints;    // number of joints in the skeleton
-  int num_skin_joints; // number of joints actually used by skinned mesh
-  ozz::vector<uint16_t> joint_remaps;
-  ozz::vector<ozz::math::Float4x4> mesh_inverse_bindposes;
+
+  std::vector<unsigned short> joint_path_stack;
+  ozz::animation::offline::RawSkeleton raw_skeleton;
+
+  ozz::animation::offline::RawSkeleton::Joint *
+  get_joint(const unsigned short *path,
+            ozz::animation::offline::RawSkeleton::Joint *current = nullptr) {
+    if (path[0] == std::numeric_limits<unsigned short>::max()) {
+      joint_path_stack.push_back(std::numeric_limits<unsigned short>::max());
+      return current;
+    }
+
+    if (current) {
+      joint_path_stack.push_back(path[0]);
+      return get_joint(path + 1, &current->children[path[0]]);
+    }
+
+    joint_path_stack.push_back(path[0]);
+    joint_path_stack.push_back(std::numeric_limits<unsigned short>::max());
+    return &raw_skeleton.roots[path[0]];
+  }
+
+  ozz::animation::offline::RawSkeleton::Joint *
+  add_joint(const unsigned short *path) {
+    joint_path_stack.clear();
+    if (!path) {
+      joint_path_stack.push_back(raw_skeleton.roots.size());
+      joint_path_stack.push_back(std::numeric_limits<unsigned short>::max());
+      raw_skeleton.roots.push_back({});
+      return &raw_skeleton.roots.back();
+    }
+
+    auto parent = get_joint(path);
+    joint_path_stack.back() = parent->children.size();
+    joint_path_stack.push_back(std::numeric_limits<unsigned short>::max());
+    parent->children.push_back({});
+    return &parent->children.back();
+  }
+
+  // mesh skinning
+  // ozz::vector<uint16_t> joint_remaps;
+  // ozz::vector<ozz::math::Float4x4> mesh_inverse_bindposes;
 };
 
 ozz_t *OZZ_init() { return new ozz_t; }
@@ -219,65 +259,79 @@ static uint32_t pack_f4_ubyte4n(float x, float y, float z, float w) {
   return pack_u32(x8, y8, z8, w8);
 }
 
-bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size, void **_vertices,
-                   int *num_vertices, void **indices,
-                   int *num_triangle_indices) {
-  ozz::io::MemoryStream stream;
-  stream.Write(ptr, size);
-  stream.Seek(0, ozz::io::Stream::kSet);
+// bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size, void **_vertices,
+//                    int *num_vertices, void **indices,
+//                    int *num_triangle_indices) {
+//   ozz::io::MemoryStream stream;
+//   stream.Write(ptr, size);
+//   stream.Seek(0, ozz::io::Stream::kSet);
+//
+//   ozz::vector<ozz::sample::Mesh> meshes;
+//   ozz::io::IArchive archive(&stream);
+//   while (archive.TestTag<ozz::sample::Mesh>()) {
+//     meshes.resize(meshes.size() + 1);
+//     archive >> meshes.back();
+//   }
+//   // assume one mesh and one submesh
+//   assert((meshes.size() == 1) && (meshes[0].parts.size() == 1));
+//
+//   *num_triangle_indices = (int)meshes[0].triangle_index_count();
+//
+//   p->num_skin_joints = meshes[0].num_joints();
+//   p->joint_remaps = std::move(meshes[0].joint_remaps);
+//   p->mesh_inverse_bindposes = std::move(meshes[0].inverse_bind_poses);
+//
+//   // convert mesh data into packed vertices
+//   *num_vertices = (meshes[0].parts[0].positions.size() / 3);
+//   assert(meshes[0].parts[0].normals.size() == (*num_vertices * 3));
+//   assert(meshes[0].parts[0].joint_indices.size() == (*num_vertices * 4));
+//   assert(meshes[0].parts[0].joint_weights.size() == (*num_vertices * 3));
+//   const float *positions = &meshes[0].parts[0].positions[0];
+//   const float *normals = &meshes[0].parts[0].normals[0];
+//   const uint16_t *joint_indices = &meshes[0].parts[0].joint_indices[0];
+//   const float *joint_weights = &meshes[0].parts[0].joint_weights[0];
+//   auto vertices = (vertex_t *)calloc(*num_vertices, sizeof(vertex_t));
+//   for (int i = 0; i < (int)*num_vertices; i++) {
+//     vertex_t *v = &(vertices)[i];
+//     v->position[0] = positions[i * 3 + 0];
+//     v->position[1] = positions[i * 3 + 1];
+//     v->position[2] = positions[i * 3 + 2];
+//     const float nx = normals[i * 3 + 0];
+//     const float ny = normals[i * 3 + 1];
+//     const float nz = normals[i * 3 + 2];
+//     v->normal = pack_f4_byte4n(nx, ny, nz, 0.0f);
+//     const uint8_t ji0 = (uint8_t)joint_indices[i * 4 + 0];
+//     const uint8_t ji1 = (uint8_t)joint_indices[i * 4 + 1];
+//     const uint8_t ji2 = (uint8_t)joint_indices[i * 4 + 2];
+//     const uint8_t ji3 = (uint8_t)joint_indices[i * 4 + 3];
+//     v->joint_indices = pack_u32(ji0, ji1, ji2, ji3);
+//     const float jw0 = joint_weights[i * 3 + 0];
+//     const float jw1 = joint_weights[i * 3 + 1];
+//     const float jw2 = joint_weights[i * 3 + 2];
+//     const float jw3 = 1.0f - (jw0 + jw1 + jw2);
+//     v->joint_weights = pack_f4_ubyte4n(jw0, jw1, jw2, jw3);
+//   }
+//
+//   *_vertices = vertices;
+//   *indices = malloc(sizeof(uint16_t) * *num_triangle_indices);
+//   memcpy(*indices, &meshes[0].triangle_indices[0],
+//          sizeof(uint16_t) * *num_triangle_indices);
+//
+//   return true;
+// }
 
-  ozz::vector<ozz::sample::Mesh> meshes;
-  ozz::io::IArchive archive(&stream);
-  while (archive.TestTag<ozz::sample::Mesh>()) {
-    meshes.resize(meshes.size() + 1);
-    archive >> meshes.back();
-  }
-  // assume one mesh and one submesh
-  assert((meshes.size() == 1) && (meshes[0].parts.size() == 1));
+const uint16_t *OZZ_raw_skeleton_add_trs(ozz_t *p, const uint16_t *path,
+                                         const char *name, const float *t,
+                                         const float *r, const float *s) {
 
-  *num_triangle_indices = (int)meshes[0].triangle_index_count();
+  auto joint = p->add_joint(path);
 
-  p->num_skin_joints = meshes[0].num_joints();
-  p->joint_remaps = std::move(meshes[0].joint_remaps);
-  p->mesh_inverse_bindposes = std::move(meshes[0].inverse_bind_poses);
+  joint->name = name;
+  joint->transform.translation = *((const ozz::math::Float3 *)t);
+  joint->transform.rotation = *((const ozz::math::Quaternion *)r);
+  joint->transform.scale = *((const ozz::math::Float3 *)s);
 
-  // convert mesh data into packed vertices
-  *num_vertices = (meshes[0].parts[0].positions.size() / 3);
-  assert(meshes[0].parts[0].normals.size() == (*num_vertices * 3));
-  assert(meshes[0].parts[0].joint_indices.size() == (*num_vertices * 4));
-  assert(meshes[0].parts[0].joint_weights.size() == (*num_vertices * 3));
-  const float *positions = &meshes[0].parts[0].positions[0];
-  const float *normals = &meshes[0].parts[0].normals[0];
-  const uint16_t *joint_indices = &meshes[0].parts[0].joint_indices[0];
-  const float *joint_weights = &meshes[0].parts[0].joint_weights[0];
-  auto vertices = (vertex_t *)calloc(*num_vertices, sizeof(vertex_t));
-  for (int i = 0; i < (int)*num_vertices; i++) {
-    vertex_t *v = &(vertices)[i];
-    v->position[0] = positions[i * 3 + 0];
-    v->position[1] = positions[i * 3 + 1];
-    v->position[2] = positions[i * 3 + 2];
-    const float nx = normals[i * 3 + 0];
-    const float ny = normals[i * 3 + 1];
-    const float nz = normals[i * 3 + 2];
-    v->normal = pack_f4_byte4n(nx, ny, nz, 0.0f);
-    const uint8_t ji0 = (uint8_t)joint_indices[i * 4 + 0];
-    const uint8_t ji1 = (uint8_t)joint_indices[i * 4 + 1];
-    const uint8_t ji2 = (uint8_t)joint_indices[i * 4 + 2];
-    const uint8_t ji3 = (uint8_t)joint_indices[i * 4 + 3];
-    v->joint_indices = pack_u32(ji0, ji1, ji2, ji3);
-    const float jw0 = joint_weights[i * 3 + 0];
-    const float jw1 = joint_weights[i * 3 + 1];
-    const float jw2 = joint_weights[i * 3 + 2];
-    const float jw3 = 1.0f - (jw0 + jw1 + jw2);
-    v->joint_weights = pack_f4_ubyte4n(jw0, jw1, jw2, jw3);
-  }
-
-  *_vertices = vertices;
-  *indices = malloc(sizeof(uint16_t) * *num_triangle_indices);
-  memcpy(*indices, &meshes[0].triangle_indices[0],
-         sizeof(uint16_t) * *num_triangle_indices);
-
-  return true;
+  return p->joint_path_stack.data();
 }
 
 } // extern "C"
