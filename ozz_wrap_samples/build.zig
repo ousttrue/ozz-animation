@@ -30,6 +30,14 @@ const Sample = struct {
             .name = self.name,
             .root_source_file = if (self.zig_root_source) |src| b.path(src) else null,
         });
+        exe.linkLibC();
+        exe.addIncludePath(b.path("ozz_wrap_samples"));
+        exe.addCSourceFiles(.{
+            .root = b.path("ozz_wrap_samples"),
+            .files = &.{
+                "myalloc.cpp",
+            },
+        });
         exe.root_module.addImport("utils", utils);
         for (utils_shader_steps) |shader_step| {
             exe.step.dependOn(shader_step);

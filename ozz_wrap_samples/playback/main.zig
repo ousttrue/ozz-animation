@@ -1,6 +1,7 @@
 const std = @import("std");
 const c = @cImport({
     @cInclude("ozz_wrap.h");
+    @cInclude("myalloc.h");
 });
 const sokol = @import("sokol");
 const sg = sokol.gfx;
@@ -9,8 +10,8 @@ const rowmath = @import("rowmath");
 const InputState = rowmath.InputState;
 const MouseCamera = rowmath.MouseCamera;
 const Mat4 = rowmath.Mat4;
-const utils = @import("utils");
-const Skeleton = utils.Skeleton;
+const framework = @import("utils");
+const Skeleton = framework.Skeleton;
 
 var skel_data_buffer: [4 * 1024]u8 = undefined;
 var anim_data_buffer: [32 * 1024]u8 = undefined;
@@ -18,14 +19,25 @@ var anim_data_buffer: [32 * 1024]u8 = undefined;
 const state = struct {
     var input: InputState = .{};
     var camera: MouseCamera = .{};
-    var ozz: ?*c.ozz_t = null;
     var pass_action = sg.PassAction{};
-    var ozz_state = utils.State{};
+    var ozz: ?*c.ozz_t = null;
+    var ozz_state = framework.State{};
 };
+
+var g_allocator: std.mem.Allocator = undefined;
+
+// export fn aligned_alloc(size: usize, alignment: usize) *anyopaque {
+//     return g_allocator.alignedAlloc(u8, @as(u29, @intCast(alignment)), size) catch unreachable;
+// }
+//
+// export fn dealloc(block: *anyopaque) void {
+//     g_allocator.free(block);
+// }
 
 export fn init() void {
     state.ozz = c.OZZ_init();
     state.ozz_state.time.factor = 1.0;
+    c.OZZ_set_allocator(&c.my_aligned_alloc, &c.my_free);
 
     // setup sokol-gfx
     sg.setup(.{
@@ -36,7 +48,7 @@ export fn init() void {
         .sample_count = sokol.app.sampleCount(),
         .logger = .{ .func = sokol.log.func },
     });
-    utils.gl_init();
+    framework.gl_init();
 
     // setup sokol-imgui
     sokol.imgui.setup(.{ .logger = .{ .func = sokol.log.func } });
@@ -91,16 +103,16 @@ export fn frame() void {
         .delta_time = state.ozz_state.time.frame,
         .dpi_scale = sokol.app.dpiScale(),
     });
-    utils.draw_ui(&state.ozz_state, &state.camera.camera);
+    framework.draw_ui(&state.ozz_state, &state.camera.camera);
 
     // draw axis & grid
-    utils.gl_begin(.{
+    framework.gl_begin(.{
         .view = state.camera.camera.transform.worldToLocal(),
         .projection = state.camera.camera.projection_matrix,
     });
-    utils.draw_axis();
-    utils.draw_grid(20, 1.0);
-    utils.gl_end();
+    framework.draw_axis();
+    framework.draw_grid(20, 1.0);
+    framework.gl_end();
 
     // render
     {
@@ -110,7 +122,7 @@ export fn frame() void {
         });
         defer sg.endPass();
 
-        utils.gl_draw();
+        framework.gl_draw();
         if (state.ozz_state.loaded.skeleton) |skeleton| {
             if (state.ozz_state.loaded.animation) {
                 const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
@@ -134,7 +146,7 @@ export fn input(e: [*c]const sokol.app.Event) void {
     if (sokol.imgui.handleEvent(e.*)) {
         return;
     }
-    utils.handle_camera_input(e, &state.input);
+    framework.handle_camera_input(e, &state.input);
 }
 
 export fn cleanup() void {

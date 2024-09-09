@@ -9,6 +9,7 @@
 #include "ozz/animation/runtime/skeleton.h"
 #include "ozz/animation/runtime/skeleton_utils.h"
 #include "ozz/base/containers/vector.h"
+#include "ozz/base/memory/allocator.h"
 #include "ozz/base/io/archive.h"
 #include "ozz/base/io/stream.h"
 #include "ozz/base/maths/soa_transform.h"
@@ -109,6 +110,24 @@ struct ozz_t {
 
 ozz_t *OZZ_init() { return new ozz_t; }
 void OZZ_shutdown(ozz_t *p) { delete (p); }
+
+struct CustomAllocator : public ozz::memory::Allocator {
+  aligned_alloc_func _alloc;
+  dealloc_func _dealloc;
+  CustomAllocator(aligned_alloc_func alloc, dealloc_func dealloc)
+      : _alloc(alloc), _dealloc(dealloc) {}
+  void *Allocate(size_t _size, size_t _alignment) {
+    return this->_alloc(_size, _alignment);
+  }
+  void Deallocate(void *_block) { this->_dealloc(_block); }
+};
+
+std::shared_ptr<CustomAllocator> g_alloc;
+
+void OZZ_set_allocator(aligned_alloc_func alloc, dealloc_func dealloc) {
+  g_alloc = std::make_shared<CustomAllocator>(alloc, dealloc);
+  ozz::memory::SetDefaulAllocator(g_alloc.get());
+}
 
 //
 // skeleton
