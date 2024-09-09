@@ -1,5 +1,8 @@
 #pragma once
+// size_t
 #include <stddef.h>
+// bool
+#include <stdbool.h>
 
 #if _MSC_VER
 #ifdef DLL_EXPORTS

@@ -1,6 +1,5 @@
 const std = @import("std");
 const c = @cImport({
-    @cInclude("stdbool.h");
     @cInclude("ozz_wrap.h");
 });
 const sokol = @import("sokol");
