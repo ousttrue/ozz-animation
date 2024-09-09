@@ -8,11 +8,13 @@ const build_sokol_and_imgui = @import("build_sokol_and_imgui.zig");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const reconfigure = if (b.option(bool, "reconfigure", "meson setup --reconfigure")) |reconfigure|
-        reconfigure
-    else
-        false;
-    const wf = buildToWriteFile(b, target, optimize, reconfigure);
+    const reconfigure_wipe = b.option(
+        []const u8,
+        "meson",
+        "add meson setup. '--wipe' ...etc",
+    );
+
+    const wf = buildToWriteFile(b, target, optimize, reconfigure_wipe);
     b.default_step.dependOn(wf);
 
     if (if (b.option(bool, "samples", "build samples")) |enable_samples|
@@ -136,10 +138,10 @@ fn buildToWriteFile(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    reconfigure: bool,
+    reconfigure_wipe: ?[]const u8,
 ) *std.Build.Step {
     const wf = b.addNamedWriteFiles("meson_build");
-    const prefix = prefixFromMesonBuild(&wf.step, b, target, optimize, reconfigure);
+    const prefix = prefixFromMesonBuild(&wf.step, b, target, optimize, reconfigure_wipe);
     if (target.result.isWasm()) {
         _ = wf.addCopyFile(prefix.path(b, "web/ozz-animation.wasm"), "web/ozz-animation.wasm");
     } else {
@@ -163,7 +165,7 @@ fn prefixFromMesonBuild(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    reconfigure: bool,
+    reconfigure_wipe: ?[]const u8,
 ) std.Build.LazyPath {
     const platform = if (target.result.isWasm()) "wasm" else "native";
     const buildtype = if (optimize == .Debug) "debug" else "release";
@@ -189,8 +191,8 @@ fn prefixFromMesonBuild(
         "--prefix",
     });
     meson_setup.addFileArg(prefix);
-    if (reconfigure) {
-        meson_setup.addArg("--reconfigure");
+    if (reconfigure_wipe) |meson_opt| {
+        meson_setup.addArg(meson_opt);
     }
     meson_install.step.dependOn(&meson_setup.step);
 
