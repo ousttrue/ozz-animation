@@ -37,7 +37,7 @@ var g_allocator: std.mem.Allocator = undefined;
 export fn init() void {
     state.ozz = c.OZZ_init();
     state.ozz_state.time.factor = 1.0;
-    c.OZZ_set_allocator(&c.my_aligned_alloc, &c.my_free);
+    // c.OZZ_set_allocator(&c.my_aligned_alloc, &c.my_free);
 
     // setup sokol-gfx
     sg.setup(.{

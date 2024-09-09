@@ -129,6 +129,10 @@ void OZZ_set_allocator(aligned_alloc_func alloc, dealloc_func dealloc) {
   ozz::memory::SetDefaulAllocator(g_alloc.get());
 }
 
+size_t OZZ_align(size_t addr, size_t alignment) {
+  return (addr + (alignment - 1)) & (0 - alignment);
+}
+
 //
 // skeleton
 //

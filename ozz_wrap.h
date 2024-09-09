@@ -28,6 +28,7 @@ DECLSPEC void OZZ_shutdown(ozz_t *p);
 typedef void *(*aligned_alloc_func)(size_t _size, size_t _alignment);
 typedef void (*dealloc_func)(void *_block);
 DECLSPEC void OZZ_set_allocator(aligned_alloc_func alloc, dealloc_func dealloc);
+DECLSPEC size_t OZZ_align(size_t addr, size_t alignment);
 
 // skeleton
 DECLSPEC bool OZZ_load_skeleton(ozz_t *p, const void *ptr, size_t size);
