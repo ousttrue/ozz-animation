@@ -51,6 +51,7 @@
         "build_glfw.zig",
         "build_ozz.zig",
         "build_samples.zig",
+        "build_sokol_and_imgui.zig",
         "shdc.zig",
         "zcc.zig",
     },
