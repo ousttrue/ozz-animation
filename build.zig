@@ -172,16 +172,14 @@ fn prefixFromMesonBuild(
     meson_install.addFileArg(builddir);
     step.dependOn(&meson_install.step);
 
-    const setup_dir = builddir.getPath(b);
-    // if (std.fs.openDirAbsolute(setup_dir, .{})) |*dir| {
-    //     @constCast(dir).close();
-    // } else |_| {
     const meson_setup = b.addSystemCommand(&.{
         "meson",
         "setup",
-        setup_dir,
+    });
+    meson_setup.addFileArg(builddir);
+    meson_setup.addArgs(&.{
         "--buildtype",
-        if (optimize == .Debug) "debug" else "release",
+        buildtype,
         "--prefix",
     });
     meson_setup.addFileArg(prefix);
