@@ -3,6 +3,8 @@
 #include <stddef.h>
 // bool
 #include <stdbool.h>
+// uint32_t
+#include <stdint.h>
 
 #if _MSC_VER
 #ifdef DLL_EXPORTS
@@ -47,12 +49,19 @@ DECLSPEC float OZZ_duration(ozz_t *p);
 DECLSPEC const float *OZZ_model_matrices(ozz_t *ozz);
 
 // mesh
-// DECLSPEC bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size,
-//                             void **vertices, int *num_vertices, void
-//                             **indices, int *num_triangle_indices);
-// DECLSPEC void OZZ_update_joints(ozz_t *ozz, int num_instances,
-//                                 float abs_time_sec, float
-//                                 *joint_upload_buffer, int max_joints);
+typedef struct vertex_t {
+  float position[3];
+  uint32_t normal;
+  uint32_t joint_indices;
+  uint32_t joint_weights;
+} vertex_t;
+DECLSPEC bool OZZ_load_mesh(ozz_t *p, const void *ptr, size_t size,
+                            vertex_t **vertices, int *num_vertices,
+                            uint16_t **indices, int *num_triangle_indices);
+DECLSPEC void OZZ_free(void *p);
+DECLSPEC void OZZ_update_joints(ozz_t *ozz, int num_instances,
+                                float abs_time_sec, float *joint_upload_buffer,
+                                int max_joints);
 
 // offline skeleton
 DECLSPEC const unsigned short *

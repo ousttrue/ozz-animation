@@ -13,8 +13,7 @@ pub fn build(b: *std.Build) void {
         "meson",
         "add meson setup. '--wipe' ...etc",
     );
-
-    const wf = buildToWriteFile(b, target, optimize, reconfigure_wipe);
+    const wf = buildToWriteFile(b, target, optimize, "meson_build", reconfigure_wipe);
     b.default_step.dependOn(wf);
 
     if (if (b.option(bool, "samples", "build samples")) |enable_samples|
@@ -138,10 +137,12 @@ fn buildToWriteFile(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
+    name: []const u8,
     reconfigure_wipe: ?[]const u8,
 ) *std.Build.Step {
-    const wf = b.addNamedWriteFiles("meson_build");
+    const wf = b.addNamedWriteFiles(name);
     const prefix = prefixFromMesonBuild(&wf.step, b, target, optimize, reconfigure_wipe);
+    _ = wf.addCopyFile(b.path("ozz_wrap.h"), "include/ozz_wrap.h");
     if (target.result.isWasm()) {
         _ = wf.addCopyFile(prefix.path(b, "web/ozz-animation.wasm"), "web/ozz-animation.wasm");
     } else {
