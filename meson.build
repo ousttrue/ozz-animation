@@ -1,5 +1,6 @@
 project(
     'ozz-animation',
+    'c',
     'cpp',
     version: '0.15.0',
     default_options: ['cpp_std=c++20'],
@@ -47,6 +48,7 @@ srcs = [
     'src/animation/offline/track_optimizer.cc',
 
     'samples/framework/mesh.cc',
+
 ]
 ozz_inc = include_directories('include')
 

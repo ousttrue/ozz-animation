@@ -16,11 +16,7 @@ pub fn build(b: *std.Build) void {
     const wf = buildToWriteFile(b, target, optimize, "meson_build", reconfigure_wipe);
     b.default_step.dependOn(wf);
 
-    if (if (b.option(bool, "samples", "build samples")) |enable_samples|
-        enable_samples
-    else
-        false)
-    {
+    if (b.option(bool, "samples", "build samples") orelse false) {
         const build_samples = @import("build_samples.zig");
         const build_framework = @import("build_framework.zig");
         const build_ozz = @import("build_ozz.zig");
