@@ -42,7 +42,7 @@ fn buildToWriteFile(
         root,
         meson_arg,
     );
-    _ = wf.addCopyFile(root.path(b, "ozz_wrap.h"), "include/ozz_wrap.h");
+    _ = wf.addCopyFile(b.path("ozz_wrap.h"), "include/ozz_wrap.h");
     if (target.result.isWasm()) {
         _ = wf.addCopyFile(prefix.path(b, "web/ozz_wrap.wasm"), "web/ozz_wrap.wasm");
     } else {

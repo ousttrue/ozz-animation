@@ -43,6 +43,9 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
+
+        // meson build is not artifact.
+        // so use namedWriteFiles.
         const ozz_wrap_wf = ozz_dep.namedWriteFiles("build");
         _ = wf.addCopyDirectory(ozz_wrap_wf.getDirectory(), "", .{});
 
@@ -54,11 +57,37 @@ pub fn build(b: *std.Build) void {
             );
         }
 
+        // copy to zig-out
         b.installDirectory(.{
             .source_dir = wf.getDirectory(),
             .install_dir = .{ .prefix = void{} },
             .install_subdir = "",
         });
+
+        if (b.option(
+            bool,
+            "ozz_wrap_samples",
+            "build ozz_wrap sample",
+        ) orelse false) {
+            const ozz_wrap_sample_build = @import("ozz_wrap_samples");
+            const ozz_wrap_sample_dep = b.dependency("ozz_wrap_samples", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            for (ozz_wrap_sample_build.samples) |sample| {
+                const artifact = ozz_wrap_sample_dep.artifact(sample.name);
+                const install = b.addInstallArtifact(artifact, .{});
+                b.getInstallStep().dependOn(&install.step);
+
+                const run = b.addRunArtifact(artifact);
+                run.step.dependOn(&install.step);
+
+                b.step(b.fmt("run-ozz_wrap-{s}", .{sample.name}), b.fmt(
+                    "Run ozz_wrap sample {s}",
+                    .{sample.name},
+                )).dependOn(&run.step);
+            }
+        }
     }
 }
 

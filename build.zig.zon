@@ -8,33 +8,9 @@
         .ozz_wrap = .{
             .path = "deps/ozz_wrap",
         },
-        // .samples = .{
-        //     .path = "samples",
-        // },
-        // .compile_commands = .{
-        //     .url = "git+https://github.com/xxxbrian/zig-compile-commands.git#dd40e0ca2b453684f2e34410ec4b69ef3c568bd7",
-        //     .hash = "12205f1bd27373077104440e39cbc388b2ebbc8938378cc261506588feed29fedf35",
-        // },
-        // .@"sokol-tools-bin" = .{
-        //     .url = "git+https://github.com/floooh/sokol-tools-bin.git#8cc8c257380c9a5e230a84aeebf09cd500903fbc",
-        //     .hash = "12200f5129c997728160ab584adcc939b9dbca6f802d7273f386dad777de85e80421",
-        // },
-        // .rowmath = .{
-        //     .url = "git+https://github.com/ousttrue/rowmath.git#8fa39ee154ecbb87124cacc0992e6b141cdda0bc",
-        //     .hash = "122079b19da46fe96044cafb0b88c03216b5502b10670bdacecf84df312c14a68eb9",
-        // },
-        // .sokol = .{
-        //     .url = "git+https://github.com/floooh/sokol-zig.git#7a1f685a29f7dbfe8ce0fe23871d01d5b29a6d0e",
-        //     .hash = "1220fd8800b4fe7a38d4778b8288f55eb451c8167b200c02e73068244d9ccefe3395",
-        // },
-        // .cimgui = .{
-        //     .url = "git+https://github.com/cimgui/cimgui.git#1.90.7dock",
-        //     .hash = "1220820e37db28faf8008f091ad3c31ceffc9e61b8dc57a3a11b5671b6446df7e1bd",
-        // },
-        // .imgui = .{
-        //     .url = "git+https://github.com/ocornut/imgui.git#v1.90.7-docking",
-        //     .hash = "122087d4c571d9054c9bc0ba3d006a3ad5f0026a0d0d33febd95393c890c63042db0",
-        // },
+        .ozz_wrap_samples = .{
+            .path = "deps/ozz_wrap_samples",
+        },
     },
     .paths = .{
         "build.zig",

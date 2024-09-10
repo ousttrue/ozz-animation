@@ -1,9 +1,56 @@
 const std = @import("std");
-const zcc = @import("../zcc.zig");
-const shdc = @import("../shdc.zig");
-const SokolLib = @import("../build_sokol_and_imgui.zig").SokolLib;
+const zcc = @import("zcc.zig");
+const shdc = @import("shdc.zig");
+const sokol_build = @import("build_sokol_and_imgui.zig");
 
-const Sample = struct {
+pub fn build(
+    b: *std.Build,
+) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    // zig-0.13.0 wasm32-emscripten libcpp issue. buidl by meson using emsdk.
+    // zig-0.13.0 x86_64-windows libcpp issue. build by meson using msvc etc.
+    const sokol_lib = sokol_build.build(b, target, optimize);
+
+    const utils = b.addModule("utils", .{
+        .root_source_file = b.path("utils/utils.zig"),
+    });
+    const utils_shader_steps = [2]*std.Build.Step{
+        shdc.shdc_zig(b, target, "utils/bone.glsl"),
+        shdc.shdc_zig(b, target, "utils/joint.glsl"),
+    };
+
+    const rowmath_dep = b.dependency("rowmath", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const rowmath_module = rowmath_dep.module("rowmath");
+    utils.addImport("rowmath", rowmath_module);
+    utils.addImport("sokol", sokol_lib.sokol_mod);
+    utils.addImport("cimgui", sokol_lib.cimgui_mod);
+
+    const ozz_wrap_dep = b.dependency("ozz_wrap", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    // const root = b.path("../..");
+    for (samples) |sample| {
+        sample.build(
+            b,
+            target,
+            optimize,
+            ozz_wrap_dep,
+            sokol_lib,
+            utils,
+            &utils_shader_steps,
+            rowmath_dep.module("rowmath"),
+        );
+    }
+}
+
+pub const Sample = struct {
     name: []const u8,
     c_files: []const []const u8 = &.{},
     c_flags: []const []const u8 = &.{},
@@ -18,8 +65,8 @@ const Sample = struct {
         b: *std.Build,
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
-        ozz_lib: *std.Build.Step.Compile,
-        sokol: SokolLib,
+        ozz_wrap_dep: *std.Build.Dependency,
+        sokol: sokol_build.SokolLib,
         utils: *std.Build.Module,
         utils_shader_steps: []const *std.Build.Step,
         rowmath_module: *std.Build.Module,
@@ -33,7 +80,6 @@ const Sample = struct {
         exe.linkLibC();
         exe.addIncludePath(b.path("ozz_wrap_samples"));
         exe.addCSourceFiles(.{
-            .root = b.path("ozz_wrap_samples"),
             .files = &.{
                 "myalloc.cpp",
             },
@@ -44,6 +90,7 @@ const Sample = struct {
         }
 
         exe.addIncludePath(b.path(""));
+        exe.addIncludePath(ozz_wrap_dep.path(""));
         sokol.inject_zig(exe);
 
         // c
@@ -62,7 +109,8 @@ const Sample = struct {
         for (self.libs) |lib| {
             exe.linkSystemLibrary(lib);
         }
-        exe.linkLibrary(ozz_lib);
+        exe.addLibraryPath(ozz_wrap_dep.namedWriteFiles("build").getDirectory().path(b, "lib"));
+        exe.linkSystemLibrary("ozz_wrap");
 
         // rowmath
         exe.root_module.addImport("rowmath", rowmath_module);
@@ -85,52 +133,17 @@ const Sample = struct {
     }
 };
 
-pub fn build(
-    b: *std.Build,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    ozz: *std.Build.Step.Compile,
-    sokol: SokolLib,
-) void {
-    const utils = b.addModule("utils", .{
-        .root_source_file = b.path("ozz_wrap_samples/utils/utils.zig"),
-    });
-    const utils_shader_steps = [2]*std.Build.Step{
-        shdc.shdc_zig(b, target, "ozz_wrap_samples/utils/bone.glsl"),
-        shdc.shdc_zig(b, target, "ozz_wrap_samples/utils/joint.glsl"),
-    };
-
-    const rowmath_dep = b.dependency("rowmath", .{});
-    const rowmath_module = rowmath_dep.module("rowmath");
-    utils.addImport("rowmath", rowmath_module);
-    utils.addImport("sokol", sokol.sokol_mod);
-    utils.addImport("cimgui", sokol.cimgui_mod);
-
-    for (samples) |sample| {
-        sample.build(
-            b,
-            target,
-            optimize,
-            ozz,
-            sokol,
-            utils,
-            &utils_shader_steps,
-            rowmath_module,
-        );
-    }
-}
-
-const samples = [_]Sample{
+pub const samples = [_]Sample{
     .{
-        .name = "ozz_wrap_playback",
-        .zig_root_source = "ozz_wrap_samples/playback/main.zig",
+        .name = "playback",
+        .zig_root_source = "playback/main.zig",
         .libs = &.{
             "gdi32",
         },
     },
     .{
-        .name = "ozz_wrap_millipede",
-        .zig_root_source = "ozz_wrap_samples/millipede/main.zig",
+        .name = "millipede",
+        .zig_root_source = "millipede/main.zig",
         .libs = &.{
             "gdi32",
         },

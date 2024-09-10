@@ -7,7 +7,7 @@ project(
 )
 
 srcs = [
-    'ozz_wrap.cpp',
+    'deps/ozz_wrap/ozz_wrap.cpp',
 
     'src/base/memory/allocator.cc',
     'src/base/platform.cc',

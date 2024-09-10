@@ -15,6 +15,10 @@ ozz_wrap(c wraper)
 
 ```
 $ zig build
+
+$ zig build -Dozz_wrap_samples -l
+
+$ zig build -Dozz_wrap_samples run-ozz_wrap-millipede
 ```
 
 ozz_wrap(c wraper) wasm
