@@ -1,101 +1,64 @@
 const std = @import("std");
-const builtin = @import("builtin");
-const zcc = @import("zcc.zig");
-const shdc = @import("shdc.zig");
-const ozz_wrap_samples = @import("ozz_wrap_samples/build.zig");
-const build_sokol_and_imgui = @import("build_sokol_and_imgui.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const reconfigure_wipe = b.option(
-        []const u8,
-        "meson",
-        "add meson setup. '--wipe' ...etc",
-    );
-    const wf = buildToWriteFile(b, target, optimize, "meson_build", reconfigure_wipe);
-    b.default_step.dependOn(wf);
 
-    if (b.option(bool, "samples", "build samples") orelse false) {
-        const build_samples = @import("build_samples.zig");
-        const build_framework = @import("build_framework.zig");
-        const build_ozz = @import("build_ozz.zig");
-        const build_glfw = @import("build_glfw.zig");
-        const sokol = build_sokol_and_imgui.build(b, target, optimize);
+    if (b.option(bool, "cpp_samples", "build cpp samples") orelse false) {
+        // ozz cpp samples. build by zig cc
+        const cpp_sample_build = @import("cpp_samples");
+        const cpp_sample_dep = b.dependency("cpp_samples", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        for (cpp_sample_build.samples) |sample| {
+            const artifact = cpp_sample_dep.artifact(sample.name);
+            const install = b.addInstallArtifact(artifact, .{});
+            b.getInstallStep().dependOn(&install.step);
 
-        const ozz = build_ozz.build(b, target, optimize);
-        const glfw = build_glfw.build(b, target, optimize);
-        const framework = build_framework.build(
-            b,
-            target,
-            optimize,
-            &.{ &ozz, &glfw },
-        );
+            const run = b.addRunArtifact(artifact);
+            run.step.dependOn(&install.step);
 
-        for (build_samples.samples) |sample| {
-            const exe = b.addExecutable(.{
-                .name = sample.name,
+            b.step(b.fmt("run-cpp-{s}", .{sample.name}), b.fmt(
+                "Run cpp sample {s}",
+                .{sample.name},
+            )).dependOn(&run.step);
+        }
+    } else {
+        const meson_arg = b.option([]const u8, "meson", "additional meson arg. --wipe etc");
+        // default.build dll or wasm.
+        const wf = b.addNamedWriteFiles("build");
+        b.default_step.dependOn(&wf.step);
+
+        // zig-0.13.0 wasm32-emscripten libcpp issue. buidl by meson using emsdk.
+        // zig-0.13.0 x86_64-windows libcpp issue. build by meson using msvc etc.
+        const ozz_dep = if (meson_arg) |arg|
+            b.dependency("ozz_wrap", .{
+                .target = target,
+                .optimize = optimize,
+                .meson_arg = arg,
+            })
+        else
+            b.dependency("ozz_wrap", .{
                 .target = target,
                 .optimize = optimize,
             });
-            exe.step.dependOn(wf);
+        const ozz_wrap_wf = ozz_dep.namedWriteFiles("build");
+        _ = wf.addCopyDirectory(ozz_wrap_wf.getDirectory(), "", .{});
 
-            if (sample.sokol_shader) |sokol_shader| {
-                exe.step.dependOn(shdc.shdc_c(b, target, sokol_shader));
-            }
-
-            exe.addCSourceFiles(.{
-                .files = sample.cfiles,
-                .flags = &.{
-                    "-std=c++20",
-                },
-            });
-            sokol.inject_lib(exe);
-            exe.addIncludePath(b.path(""));
-            exe.addIncludePath(b.path("extern/glfw/include"));
-            for (sample.includes) |include| {
-                exe.addIncludePath(b.path(include));
-            }
-            framework.link(b, exe);
-            ozz.link(b, exe);
-            glfw.link(b, exe);
-            for (sample.windows_libs) |lib| {
-                exe.linkSystemLibrary(lib);
-            }
-            b.installArtifact(exe);
-
-            if (sample.use_gtest) {
-                exe.addIncludePath(b.path("extern/gtest/fused-src"));
-            }
-
-            const install = b.addInstallArtifact(exe, .{});
-            b.getInstallStep().dependOn(&install.step);
-
-            // targets.append(exe) catch @panic("OOM");
-            // add a step called "zcc" (Compile commands DataBase) for making
-            // compile_commands.json. could be named anything. cdb is just quick to type
-            install.step.dependOn(zcc.createStep(b, .{ .targets = &.{exe} }));
-
-            const run = b.addRunArtifact(exe);
-            run.step.dependOn(&install.step);
-            // run.setCwd(b.path("zig-out/bin"));
-
-            const step = b.step(
-                b.fmt("run-{s}", .{sample.name}),
-                b.fmt("Run {s}", .{sample.name}),
-            );
-            step.dependOn(&run.step);
-        }
-
-        if (!target.result.isWasm()) {
-            ozz_wrap_samples.build(
-                b,
-                target,
-                optimize,
-                ozz.lib,
-                sokol,
+        // copy media/bin/* to web/*
+        for (medias) |media| {
+            _ = wf.addCopyFile(
+                b.path(b.fmt("media/bin/{s}", .{media})),
+                b.fmt("{s}/{s}", .{ "web", media }),
             );
         }
+
+        b.installDirectory(.{
+            .source_dir = wf.getDirectory(),
+            .install_dir = .{ .prefix = void{} },
+            .install_subdir = "",
+        });
     }
 }
 
@@ -128,119 +91,3 @@ const medias = [_][]const u8{
     "seymour_animation.ozz",
     "seymour_skeleton.ozz",
 };
-
-fn buildToWriteFile(
-    b: *std.Build,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    name: []const u8,
-    reconfigure_wipe: ?[]const u8,
-) *std.Build.Step {
-    const wf = b.addNamedWriteFiles(name);
-    const prefix = prefixFromMesonBuild(&wf.step, b, target, optimize, reconfigure_wipe);
-    _ = wf.addCopyFile(b.path("ozz_wrap.h"), "include/ozz_wrap.h");
-    if (target.result.isWasm()) {
-        _ = wf.addCopyFile(prefix.path(b, "web/ozz-animation.wasm"), "web/ozz-animation.wasm");
-    } else {
-        _ = wf.addCopyFile(prefix.path(b, "bin/ozz-animation.dll"), "bin/ozz-animation.dll");
-        _ = wf.addCopyFile(prefix.path(b, "lib/ozz-animation.lib"), "lib/ozz-animation.lib");
-    }
-
-    const dir = if (target.result.isWasm()) "web" else "bin";
-    for (medias) |media| {
-        _ = wf.addCopyFile(
-            b.path(b.fmt("media/bin/{s}", .{media})),
-            b.fmt("{s}/{s}", .{ dir, media }),
-        );
-    }
-
-    return &wf.step;
-}
-
-fn prefixFromMesonBuild(
-    step: *std.Build.Step,
-    b: *std.Build,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    reconfigure_wipe: ?[]const u8,
-) std.Build.LazyPath {
-    const platform = if (target.result.isWasm()) "wasm" else "native";
-    const buildtype = if (optimize == .Debug) "debug" else "release";
-
-    const builddir = b.path(b.fmt("build_{s}_{s}", .{ platform, buildtype }));
-    const prefix = b.path(b.fmt("prefix_{s}_{s}", .{ platform, buildtype }));
-    const meson_install = b.addSystemCommand(&.{
-        "meson",
-        "install",
-        "-C",
-    });
-    meson_install.addFileArg(builddir);
-    step.dependOn(&meson_install.step);
-
-    const meson_setup = b.addSystemCommand(&.{
-        "meson",
-        "setup",
-    });
-    meson_setup.addFileArg(builddir);
-    meson_setup.addArgs(&.{
-        "--buildtype",
-        buildtype,
-        "--prefix",
-    });
-    meson_setup.addFileArg(prefix);
-    if (reconfigure_wipe) |meson_opt| {
-        meson_setup.addArg(meson_opt);
-    }
-    meson_install.step.dependOn(&meson_setup.step);
-
-    if (target.result.isWasm()) {
-        // cross-file
-        const ini = writeCrossFile(&meson_setup.step, b);
-        meson_setup.addArg("--cross-file");
-        meson_setup.addFileArg(ini);
-    }
-    // }
-
-    return prefix;
-}
-
-pub fn writeCrossFile(
-    step: *std.Build.Step,
-    b: *std.Build,
-) std.Build.LazyPath {
-    const wf = b.addWriteFiles();
-    step.dependOn(&wf.step);
-    const emsdk_zig = b.dependency("emsdk-zig", .{});
-    wf.step.dependOn(emsdk_zig.builder.default_step);
-    const dep_emsdk = emsdk_zig.builder.dependency("emsdk", .{});
-    const ext: []const u8 = if (builtin.os.tag == .windows) ".bat" else "";
-    return wf.add("emsdk.ini", b.fmt(
-        \\# wasm.ini
-        \\[constants]
-        \\args = []
-        \\
-        \\[binaries]
-        \\c = '{s}'
-        \\cpp = '{s}'
-        \\ar = '{s}'
-        \\strip = '{s}'
-        \\
-        \\[built-in options]
-        \\c_args = []
-        \\c_link_args = args
-        \\cpp_args = []
-        \\cpp_link_args = args
-        \\default_library = 'static'
-        \\
-        \\[host_machine]
-        \\system = 'emscripten'
-        \\cpu_family = 'wasm'
-        \\cpu = 'wasm'
-        \\endian = 'little'
-    , .{
-        dep_emsdk.path(b.fmt("upstream/emscripten/emcc{s}", .{ext})).getPath(b),
-        dep_emsdk.path(b.fmt("upstream/emscripten/em++{s}", .{ext})).getPath(b),
-        dep_emsdk.path(b.fmt("upstream/emscripten/emar{s}", .{ext})).getPath(b),
-        dep_emsdk.path(b.fmt("upstream/emscripten/emstrip{s}", .{ext})).getPath(b),
-    }));
-}

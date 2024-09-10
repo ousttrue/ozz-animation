@@ -56,18 +56,20 @@ cxx = meson.get_compiler('cpp')
 if cxx.get_id() == 'emscripten'
     # wasm
     executable(
-        'ozz-animation',
+        'ozz_wrap',
         srcs,
         include_directories: [ozz_inc, include_directories('src')],
         cpp_args: [
             '-DEMSCRIPTEN=1',
             '-sSIDE_MODULE=1',
             '-fPIC',
+            '-g',
         ],
         link_args: [
             '-sEXPORT_ALL=1',
             '-sWASM=1',
             '-sSIDE_MODULE=1',
+            '-g',
         ],
         # pic: true,
         install: true,
@@ -79,7 +81,7 @@ if cxx.get_id() == 'emscripten'
 else
     # native
     ozz_lib = shared_library(
-        'ozz-animation',
+        'ozz_wrap',
         srcs,
         include_directories: [ozz_inc, include_directories('src')],
         cpp_args: [

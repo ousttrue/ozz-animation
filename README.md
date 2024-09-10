@@ -3,6 +3,27 @@
 ozz-animation
 =============
 
+zig cc build
+------------
+
+```
+$ zig build -Dcpp_samples -l
+```
+
+ozz_wrap(c wraper)
+------------------
+
+```
+$ zig build
+```
+
+ozz_wrap(c wraper) wasm
+-----------------------
+
+```
+$ zig build -Dwasm32-emscripten
+```
+
 open source c++ 3d skeletal animation library and toolset
 ---------------------------------------------------------
 

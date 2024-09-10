@@ -1,0 +1,7 @@
+.{
+    .name = "cpp_sample",
+    .version = "0.0.0",
+    .paths = .{
+        "",
+    },
+}
