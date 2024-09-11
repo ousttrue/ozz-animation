@@ -54,8 +54,6 @@ pub fn build(
             "src/geometry/runtime/skinning_job.cc",
 
             "samples/framework/mesh.cc",
-
-            "ozz_wrap.cpp",
         },
     });
     lib.addIncludePath(root.path(b, "include"));

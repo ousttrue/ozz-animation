@@ -5,11 +5,11 @@
         .cpp_samples = .{
             .path = "deps/cpp_samples",
         },
-        .ozz_wrap = .{
-            .path = "deps/ozz_wrap",
+        .cozz = .{
+            .path = "deps/cozz",
         },
-        .ozz_wrap_samples = .{
-            .path = "deps/ozz_wrap_samples",
+        .cozz_samples = .{
+            .path = "deps/cozz_samples",
         },
     },
     .paths = .{
@@ -19,9 +19,9 @@
         "include",
         "samples",
         "media",
-        "ozz_wrap.cpp",
-        "ozz_wrap.h",
-        "ozz_wrap_samples",
+        "cozz.cpp",
+        "cozz.h",
+        "cozz_samples",
         "meson.build",
         "meson_options.txt",
         //

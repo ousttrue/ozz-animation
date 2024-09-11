@@ -1,6 +1,6 @@
 const std = @import("std");
 const c = @cImport({
-    @cInclude("ozz_wrap.h");
+    @cInclude("cozz.h");
 });
 const sokol = @import("sokol");
 const sg = sokol.gfx;
@@ -9,6 +9,7 @@ const rowmath = @import("rowmath");
 const InputState = rowmath.InputState;
 const MouseCamera = rowmath.MouseCamera;
 const Mat4 = rowmath.Mat4;
+const Vec3 = rowmath.Vec3;
 const framework = @import("utils");
 const Skeleton = framework.Skeleton;
 
@@ -21,17 +22,12 @@ const state = struct {
     var pass_action = sg.PassAction{};
     var ozz: ?*c.ozz_t = null;
     var ozz_state = framework.State{};
+    var attachment: ?u16 = null;
+    // Offset, translation of the attached object from the joint.
+    var offset = Vec3.zero;
 };
 
 var g_allocator: std.mem.Allocator = undefined;
-
-// export fn aligned_alloc(size: usize, alignment: usize) *anyopaque {
-//     return g_allocator.alignedAlloc(u8, @as(u29, @intCast(alignment)), size) catch unreachable;
-// }
-//
-// export fn dealloc(block: *anyopaque) void {
-//     g_allocator.free(block);
-// }
 
 export fn init() void {
     state.ozz = c.OZZ_init();
@@ -76,7 +72,7 @@ export fn init() void {
     });
 
     _ = sokol.fetch.send(.{
-        .path = "pab_crossarms.ozz",
+        .path = "pab_walk.ozz",
         .callback = animation_data_loaded,
         .buffer = sokol.fetch.asRange(&anim_data_buffer),
     });
@@ -111,7 +107,6 @@ export fn frame() void {
     });
     framework.draw_axis();
     framework.draw_grid(20, 1.0);
-    framework.gl_end();
 
     // render
     {
@@ -121,7 +116,6 @@ export fn frame() void {
         });
         defer sg.endPass();
 
-        framework.gl_draw();
         if (state.ozz_state.loaded.skeleton) |skeleton| {
             if (state.ozz_state.loaded.animation) {
                 const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
@@ -134,7 +128,26 @@ export fn frame() void {
                 state.camera.viewProjectionMatrix(),
                 matrices,
             );
+
+            if (state.attachment) |attachment| {
+                // Prepares attached object transformation.
+                // Gets model space transformation of the joint.
+                const joint = matrices[attachment];
+
+                const t = Mat4.translate(state.offset);
+
+                // Prepare rendering.
+                const thickness = 0.01;
+                const length = 0.5;
+                framework.drawBox(t.mul(joint), .{
+                    .min = .{ .x = -thickness, .y = -thickness, .z = -length },
+                    .max = .{ .x = thickness, .y = thickness, .z = 0 },
+                });
+            }
         }
+
+        framework.gl_end();
+        framework.gl_draw();
 
         sokol.imgui.render();
     }
@@ -174,6 +187,13 @@ export fn skeleton_data_loaded(response: [*c]const sokol.fetch.Response) void {
                 };
             }
             state.ozz_state.loaded.skeleton = skeleton;
+
+            // Finds the joint where the object should be attached.
+            const attachment = c.OZZ_find_joint(state.ozz, "LeftHandMiddle1");
+            if (attachment != std.math.maxInt(u16)) {
+                // -1
+                state.attachment = attachment;
+            }
         } else {
             state.ozz_state.loaded.failed = true;
         }
@@ -203,7 +223,7 @@ pub fn main() void {
         .width = 800,
         .height = 600,
         .sample_count = 4,
-        .window_title = "ozz_wrap_playback",
+        .window_title = "cozz_playback",
         .icon = .{ .sokol_default = true },
         .logger = .{ .func = sokol.log.func },
     });

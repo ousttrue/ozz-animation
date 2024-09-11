@@ -52,7 +52,7 @@ pub fn build(
     utils.addImport("sokol", sokol_lib.sokol_mod);
     utils.addImport("cimgui", sokol_lib.cimgui_mod);
 
-    const ozz_wrap_dep = b.dependency("ozz_wrap", .{
+    const cozz_dep = b.dependency("cozz", .{
         .target = target,
         .optimize = optimize,
     });
@@ -65,7 +65,7 @@ pub fn build(
                 b,
                 target,
                 optimize,
-                ozz_wrap_dep,
+                cozz_dep,
                 sokol_lib,
                 utils,
                 &utils_shader_steps,
@@ -79,7 +79,7 @@ pub fn build(
                 b,
                 target,
                 optimize,
-                ozz_wrap_dep,
+                cozz_dep,
                 sokol_lib,
                 utils,
                 &utils_shader_steps,
@@ -103,7 +103,7 @@ pub const Sample = struct {
         b: *std.Build,
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
-        ozz_wrap_dep: *std.Build.Dependency,
+        cozz_dep: *std.Build.Dependency,
         sokol: sokol_build.SokolLib,
         utils: *std.Build.Module,
         utils_shader_steps: []const *std.Build.Step,
@@ -115,14 +115,14 @@ pub const Sample = struct {
             .name = self.name,
             .root_source_file = if (self.zig_root_source) |src| b.path(src) else null,
         });
-        exe.addIncludePath(b.path("ozz_wrap_samples"));
+        exe.addIncludePath(b.path("cozz_samples"));
         exe.root_module.addImport("utils", utils);
         for (utils_shader_steps) |shader_step| {
             exe.step.dependOn(shader_step);
         }
 
         exe.addIncludePath(b.path(""));
-        exe.addIncludePath(ozz_wrap_dep.path(""));
+        exe.addIncludePath(cozz_dep.path(""));
         sokol.inject_zig(exe);
 
         // c
@@ -143,11 +143,11 @@ pub const Sample = struct {
         exe.addIncludePath(b.path("include"));
 
         // libs
-        exe.addLibraryPath(ozz_wrap_dep.namedWriteFiles(
+        exe.addLibraryPath(cozz_dep.namedWriteFiles(
             "build",
         ).getDirectory().path(b, "lib"));
         exe.linkSystemLibrary("gdi32");
-        exe.linkSystemLibrary("ozz_wrap");
+        exe.linkSystemLibrary("cozz");
 
         // install exe & run
         const install = b.addInstallArtifact(exe, .{});
@@ -169,7 +169,7 @@ pub const Sample = struct {
         b: *std.Build,
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
-        ozz_wrap_dep: *std.Build.Dependency,
+        cozz_dep: *std.Build.Dependency,
         sokol: sokol_build.SokolLib,
         utils: *std.Build.Module,
         utils_shader_steps: []const *std.Build.Step,
@@ -185,14 +185,14 @@ pub const Sample = struct {
             // required
             .pic = true,
         });
-        lib.addIncludePath(b.path("ozz_wrap_samples"));
+        lib.addIncludePath(b.path("cozz_samples"));
         lib.root_module.addImport("utils", utils);
         for (utils_shader_steps) |shader_step| {
             lib.step.dependOn(shader_step);
         }
 
         lib.addIncludePath(b.path(""));
-        lib.addIncludePath(ozz_wrap_dep.path(""));
+        lib.addIncludePath(cozz_dep.path(""));
         sokol.inject_zig(lib);
 
         // c
@@ -239,10 +239,10 @@ pub const Sample = struct {
         emcc.addArg("-o");
         const out_file = emcc.addOutputFileArg(b.fmt("{s}.html", .{self.name}));
 
-        // link ozz_wrap as sidemodule
+        // link cozz as sidemodule
         emcc.addArg("-sMAIN_MODULE=1");
-        const ozz_wrap_wf = ozz_wrap_dep.namedWriteFiles("build");
-        emcc.addFileArg(ozz_wrap_wf.getDirectory().path(b, "web/ozz_wrap.wasm"));
+        const cozz_wf = cozz_dep.namedWriteFiles("build");
+        emcc.addFileArg(cozz_wf.getDirectory().path(b, "web/cozz.wasm"));
         emcc.addArg("-sERROR_ON_UNDEFINED_SYMBOLS=0");
 
         // the emcc linker creates 3 output files (.html, .wasm and .js)

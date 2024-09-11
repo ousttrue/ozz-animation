@@ -5,7 +5,7 @@ pub const emsdk_zig = @import("emsdk-zig");
 //
 // ozz-animation wrapper for zig using
 //
-// build ozz_wrap.dll or ozz_wrap.wasm
+// build cozz.dll or cozz.wasm
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -43,12 +43,12 @@ fn buildToWriteFile(
         root,
         meson_arg,
     );
-    _ = wf.addCopyFile(b.path("ozz_wrap.h"), "include/ozz_wrap.h");
+    _ = wf.addCopyFile(b.path("cozz.h"), "include/cozz.h");
     if (target.result.isWasm()) {
-        _ = wf.addCopyFile(prefix.path(b, "web/ozz_wrap.wasm"), "web/ozz_wrap.wasm");
+        _ = wf.addCopyFile(prefix.path(b, "web/cozz.wasm"), "web/cozz.wasm");
     } else {
-        _ = wf.addCopyFile(prefix.path(b, "bin/ozz_wrap.dll"), "bin/ozz_wrap.dll");
-        _ = wf.addCopyFile(prefix.path(b, "lib/ozz_wrap.lib"), "lib/ozz_wrap.lib");
+        _ = wf.addCopyFile(prefix.path(b, "bin/cozz.dll"), "bin/cozz.dll");
+        _ = wf.addCopyFile(prefix.path(b, "lib/cozz.lib"), "lib/cozz.lib");
     }
 
     return &wf.step;

@@ -1,4 +1,4 @@
-#include "ozz_wrap.h"
+#include "cozz.h"
 
 #include <string.h>
 
@@ -21,7 +21,7 @@
 #include "ozz/animation/offline/raw_animation.h"
 #include "ozz/animation/offline/animation_builder.h"
 
-#include "samples/framework/mesh.h"
+#include "framework/mesh.h"
 
 extern "C" {
 

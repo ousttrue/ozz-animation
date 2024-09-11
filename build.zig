@@ -1,4 +1,5 @@
 const std = @import("std");
+const name = "cozz";
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -33,21 +34,21 @@ pub fn build(b: *std.Build) void {
         // zig-0.13.0 wasm32-emscripten libcpp issue. buidl by meson using emsdk.
         // zig-0.13.0 x86_64-windows libcpp issue. build by meson using msvc etc.
         const ozz_dep = if (meson_arg) |arg|
-            b.dependency("ozz_wrap", .{
+            b.dependency(name, .{
                 .target = target,
                 .optimize = optimize,
                 .meson_arg = arg,
             })
         else
-            b.dependency("ozz_wrap", .{
+            b.dependency(name, .{
                 .target = target,
                 .optimize = optimize,
             });
 
         // meson build is not artifact.
         // so use namedWriteFiles.
-        const ozz_wrap_wf = ozz_dep.namedWriteFiles("build");
-        _ = wf.addCopyDirectory(ozz_wrap_wf.getDirectory(), "", .{});
+        const cozz_wf = ozz_dep.namedWriteFiles("build");
+        _ = wf.addCopyDirectory(cozz_wf.getDirectory(), "", .{});
 
         // copy media/bin/* to web/*
         for (medias) |media| {
@@ -67,27 +68,27 @@ pub fn build(b: *std.Build) void {
 
         if (b.option(
             bool,
-            "ozz_wrap_samples",
-            "build ozz_wrap sample",
+            "cozz_samples",
+            "build cozz sample",
         ) orelse false) {
-            const ozz_wrap_sample_build = @import("ozz_wrap_samples");
-            const ozz_wrap_sample_dep = b.dependency("ozz_wrap_samples", .{
+            const cozz_sample_build = @import("cozz_samples");
+            const cozz_sample_dep = b.dependency("cozz_samples", .{
                 .target = target,
                 .optimize = optimize,
             });
 
             if (target.result.isWasm()) {
                 // prefix/web
-                const ozz_wrap_sample_wf = ozz_wrap_sample_dep.namedWriteFiles("build");
+                const cozz_sample_wf = cozz_sample_dep.namedWriteFiles("build");
                 b.installDirectory(.{
-                    .source_dir = ozz_wrap_sample_wf.getDirectory(),
+                    .source_dir = cozz_sample_wf.getDirectory(),
                     .install_dir = .{ .prefix = void{} },
                     .install_subdir = "",
                 });
             } else {
                 // prefix/bin
-                for (ozz_wrap_sample_build.samples) |sample| {
-                    const artifact = ozz_wrap_sample_dep.artifact(sample.name);
+                for (cozz_sample_build.samples) |sample| {
+                    const artifact = cozz_sample_dep.artifact(sample.name);
                     const install = b.addInstallArtifact(artifact, .{});
                     b.getInstallStep().dependOn(&install.step);
 
@@ -96,8 +97,8 @@ pub fn build(b: *std.Build) void {
                     run.step.dependOn(&install.step);
                     run.step.dependOn(&installDir.step);
 
-                    b.step(b.fmt("run-ozz_wrap-{s}", .{sample.name}), b.fmt(
-                        "Run ozz_wrap sample {s}",
+                    b.step(b.fmt("run-cozz-{s}", .{sample.name}), b.fmt(
+                        "Run cozz sample {s}",
                         .{sample.name},
                     )).dependOn(&run.step);
                 }

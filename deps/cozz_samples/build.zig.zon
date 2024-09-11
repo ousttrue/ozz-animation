@@ -1,9 +1,9 @@
 .{
-    .name = "ozz_wrap_samples",
+    .name = "cozz_samples",
     .version = "0.0.0",
     .dependencies = .{
-        .ozz_wrap = .{
-            .path = "../ozz_wrap",
+        .cozz = .{
+            .path = "../cozz",
         },
         .@"sokol-tools-bin" = .{
             .url = "git+https://github.com/floooh/sokol-tools-bin.git#8cc8c257380c9a5e230a84aeebf09cd500903fbc",

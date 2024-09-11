@@ -1,5 +1,5 @@
 .{
-    .name = "ozz_wrap",
+    .name = "cozz",
     .version = "0.0.0",
     .dependencies = .{
         .@"emsdk-zig" = .{

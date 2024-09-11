@@ -10,29 +10,29 @@ zig cc build
 > zig build -Dcpp_samples -l
 ```
 
-ozz_wrap(c wrapper)
+cozz(c wrapper)
 -------------------
 
 ```
 > zig build
 
-> zig build -Dozz_wrap_samples -l
+> zig build -Dcozzples -l
 
-> zig build -Dozz_wrap_samples run-ozz_wrap-millipede
+> zig build -Dcozzples run-cozz-millipede
 ```
 
-ozz_wrap(c wrapper) wasm
+cozz(c wrapper) wasm
 ------------------------
 
 ```
 > zig build -Dwasm32-emscripten
 
-> zig build -Dwasm32-emscripten -Dozz_wrap_samples
+> zig build -Dwasm32-emscripten -Dcozzples
 
 > fd wasm zig-out
 zig-out\web\millipede.wasm
 zig-out\web\millipede.wasm.map
-zig-out\web\ozz_wrap.wasm
+zig-out\web\cozz.wasm
 zig-out\web\playback.wasm
 zig-out\web\playback.wasm.map
 ```
