@@ -21,3 +21,5 @@ compile_commands.json
 
 node_modules/
 dist/
+
+public/wasm/
