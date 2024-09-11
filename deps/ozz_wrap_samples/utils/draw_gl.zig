@@ -2,6 +2,7 @@ const sokol = @import("sokol");
 const rowmath = @import("rowmath");
 const Mat4 = rowmath.Mat4;
 const Vec3 = rowmath.Vec3;
+const RgbaU8 = rowmath.RgbaU8;
 
 const CameraMatrix = struct { projection: Mat4, view: Mat4 };
 
@@ -106,5 +107,133 @@ pub fn draw_grid(_cell_count: i32, _cell_size: f32) void {
             begin.x += _cell_size;
             end.x += _cell_size;
         }
+    }
+}
+
+pub const Box = struct {
+    min: Vec3,
+    max: Vec3,
+
+    pub fn points(self: @This()) struct {
+        nnn: Vec3,
+        pnn: Vec3,
+        ppn: Vec3,
+        npn: Vec3,
+        nnp: Vec3,
+        pnp: Vec3,
+        ppp: Vec3,
+        npp: Vec3,
+    } {
+        return .{
+            .nnn = .{ .x = self.min.x, .y = self.min.y, .z = self.min.z },
+            .pnn = .{ .x = self.max.x, .y = self.min.y, .z = self.min.z },
+            .ppn = .{ .x = self.max.x, .y = self.max.y, .z = self.min.z },
+            .npn = .{ .x = self.min.x, .y = self.max.y, .z = self.min.z },
+            .nnp = .{ .x = self.min.x, .y = self.min.y, .z = self.max.z },
+            .pnp = .{ .x = self.max.x, .y = self.min.y, .z = self.max.z },
+            .ppp = .{ .x = self.max.x, .y = self.max.y, .z = self.max.z },
+            .npp = .{ .x = self.min.x, .y = self.max.y, .z = self.max.z },
+        };
+    }
+};
+
+fn drawLine(v0: Vec3, v1: Vec3) void {
+    sokol.gl.v3f(v0.x, v0.y, v0.z);
+    sokol.gl.v3f(v1.x, v1.y, v1.z);
+}
+
+pub fn drawBox(
+    m: Mat4,
+    box: Box,
+) void {
+    const colors = [2]RgbaU8{
+        RgbaU8.red,
+        RgbaU8.green,
+    };
+    sokol.gl.pushMatrix();
+    defer sokol.gl.popMatrix();
+    sokol.gl.multMatrix(&m.m[0]);
+
+    const v = box.points();
+
+    // _ = _box;
+    // {
+    // Filled boxed
+    //   GlImmediatePC im(immediate_renderer(), GL_TRIANGLE_STRIP, _transform);
+    //   GlImmediatePC::Vertex v = { {0, 0, 0}, {_colors[0].r, _colors[0].g, _colors[0].b, _colors[0].a}};
+    // First 3 cube faces
+    //   v.pos[0] = _box.max.x;
+    //   v.pos[1] = _box.min.y;
+    //   v.pos[2] = _box.min.z;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.min.x;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.max.x;
+    //   v.pos[1] = _box.max.y;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.min.x;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.max.x;
+    //   v.pos[2] = _box.max.z;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.min.x;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.max.x;
+    //   v.pos[1] = _box.min.y;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.min.x;
+    //   im.PushVertex(v);
+    //   // Link next 3 cube faces with degenerated triangles.
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.min.x;
+    //   v.pos[1] = _box.max.y;
+    //   im.PushVertex(v);
+    //   im.PushVertex(v);
+    //   // Last 3 cube faces.
+    //   v.pos[2] = _box.min.z;
+    //   im.PushVertex(v);
+    //   v.pos[1] = _box.min.y;
+    //   v.pos[2] = _box.max.z;
+    //   im.PushVertex(v);
+    //   v.pos[2] = _box.min.z;
+    //   im.PushVertex(v);
+    //   v.pos[0] = _box.max.x;
+    //   v.pos[2] = _box.max.z;
+    //   im.PushVertex(v);
+    //   v.pos[2] = _box.min.z;
+    //   im.PushVertex(v);
+    //   v.pos[1] = _box.max.y;
+    //   v.pos[2] = _box.max.z;
+    //   im.PushVertex(v);
+    //   v.pos[2] = _box.min.z;
+    //   im.PushVertex(v);
+    // }
+
+    { // Wireframe boxed
+        sokol.gl.beginLines();
+        defer sokol.gl.end();
+
+        //   GlImmediatePC im(immediate_renderer(), GL_LINES, _transform);
+        //   GlImmediatePC::Vertex v = {
+        //       {0, 0, 0}, {_colors[1].r, _colors[1].g, _colors[1].b, _colors[1].a}};
+        const c = colors[1];
+        sokol.gl.c4b(c.r, c.g, c.b, c.a);
+        // First face.
+        drawLine(v.nnn, v.npn);
+        drawLine(v.npn, v.ppn);
+        drawLine(v.ppn, v.pnn);
+        drawLine(v.pnn, v.nnn);
+
+        // Second face.
+        drawLine(v.nnp, v.npp);
+        drawLine(v.npp, v.ppp);
+        drawLine(v.ppp, v.pnp);
+        drawLine(v.pnp, v.nnp);
+
+        // Link faces.
+        drawLine(v.nnp, v.nnn);
+        drawLine(v.npp, v.npp);
+        drawLine(v.ppp, v.ppn);
+        drawLine(v.pnp, v.pnp);
     }
 }

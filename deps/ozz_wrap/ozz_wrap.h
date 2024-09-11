@@ -41,6 +41,7 @@ DECLSPEC const bool OZZ_joint_is_leaf(ozz_t *p, size_t i);
 DECLSPEC const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index,
                                      float pOutT[3], float pOutR[4],
                                      float pOutS[3]);
+DECLSPEC const uint16_t OZZ_find_joint(ozz_t *ozz, const char *name);
 
 // animation
 DECLSPEC bool OZZ_load_animation(ozz_t *p, const void *ptr, size_t size);

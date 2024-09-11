@@ -178,6 +178,10 @@ const void OZZ_skeleton_trs(ozz_t *ozz, size_t joint_index, float pOutT[3],
   }
 }
 
+const uint16_t OZZ_find_joint(ozz_t *ozz, const char *name) {
+  return ozz::animation::FindJoint(ozz->skeleton, name);
+}
+
 //
 // animation
 //

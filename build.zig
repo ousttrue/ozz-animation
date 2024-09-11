@@ -58,11 +58,12 @@ pub fn build(b: *std.Build) void {
         }
 
         // copy to zig-out
-        b.installDirectory(.{
+        const installDir = b.addInstallDirectory(.{
             .source_dir = wf.getDirectory(),
             .install_dir = .{ .prefix = void{} },
             .install_subdir = "",
         });
+        b.getInstallStep().dependOn(&installDir.step);
 
         if (b.option(
             bool,
@@ -91,7 +92,9 @@ pub fn build(b: *std.Build) void {
                     b.getInstallStep().dependOn(&install.step);
 
                     const run = b.addRunArtifact(artifact);
+                    run.setCwd(b.path("zig-out/web"));
                     run.step.dependOn(&install.step);
+                    run.step.dependOn(&installDir.step);
 
                     b.step(b.fmt("run-ozz_wrap-{s}", .{sample.name}), b.fmt(
                         "Run ozz_wrap sample {s}",

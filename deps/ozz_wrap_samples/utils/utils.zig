@@ -4,6 +4,8 @@ pub const Bone = @import("Bone.zig");
 pub const Skeleton = @import("Skeleton.zig");
 pub usingnamespace @import("draw_gl.zig");
 pub usingnamespace @import("draw_ui.zig");
+const Vec3 = rowmath.Vec3;
+const Mat4 = rowmath.Mat4;
 
 pub fn handle_camera_input(
     e: [*c]const sokol.app.Event,

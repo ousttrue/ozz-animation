@@ -257,6 +257,10 @@ pub const samples = [_]Sample{
         .zig_root_source = "playback/main.zig",
     },
     .{
+        .name = "attach",
+        .zig_root_source = "attach/main.zig",
+    },
+    .{
         .name = "millipede",
         .zig_root_source = "millipede/main.zig",
     },

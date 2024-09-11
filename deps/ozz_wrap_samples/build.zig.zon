@@ -10,14 +10,9 @@
             .hash = "12200f5129c997728160ab584adcc939b9dbca6f802d7273f386dad777de85e80421",
         },
         .rowmath = .{
-            .url = "git+https://github.com/ousttrue/rowmath.git#8fa39ee154ecbb87124cacc0992e6b141cdda0bc",
-            .hash = "122079b19da46fe96044cafb0b88c03216b5502b10670bdacecf84df312c14a68eb9",
+            .url = "git+https://github.com/ousttrue/rowmath.git#465b3a49db61392de27a1033a2351baad3c7dd53",
+            .hash = "12200970e5310daa620ad128f1f47fda835f66cf5d57f9ffd531c68a5d1d1b5d54c0",
         },
-        // .sokol = .{
-        //     .url = "git+https://github.com/floooh/sokol-zig.git#7a1f685a29f7dbfe8ce0fe23871d01d5b29a6d0e",
-        //     .hash = "1220fd8800b4fe7a38d4778b8288f55eb451c8167b200c02e73068244d9ccefe3395",
-        // },
-        // -fPIC
         .sokol = .{
             .url = "git+https://github.com/ousttrue/sokol-zig.git#38014bc673fd3c82f44612f02573d5af00dfc66f",
             .hash = "12205b36041f858db146628cd3b25fae4cda5f161a6a52d48fa22cde0c03b689ccb8",
