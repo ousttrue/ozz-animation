@@ -405,7 +405,7 @@ fn build() void {
     }
     const num_joints = c.OZZ_num_joints(state.ozz);
     // std.debug.print("create {}!\n", .{num_joints});
-    var skeleton = Skeleton.init(std.heap.page_allocator, num_joints) catch unreachable;
+    var skeleton = Skeleton.init(std.heap.c_allocator, num_joints) catch unreachable;
     const parents = c.OZZ_joint_parents(state.ozz);
     const names: [*]const [*:0]const u8 = @ptrCast(c.OZZ_joint_names(state.ozz));
     for (0..num_joints) |i| {

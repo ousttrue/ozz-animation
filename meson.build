@@ -48,7 +48,6 @@ srcs = [
     'src/animation/offline/track_optimizer.cc',
 
     'samples/framework/mesh.cc',
-
 ]
 ozz_inc = include_directories('include')
 

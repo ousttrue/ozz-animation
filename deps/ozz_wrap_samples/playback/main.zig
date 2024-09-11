@@ -1,7 +1,6 @@
 const std = @import("std");
 const c = @cImport({
     @cInclude("ozz_wrap.h");
-    @cInclude("myalloc.h");
 });
 const sokol = @import("sokol");
 const sg = sokol.gfx;
@@ -71,13 +70,13 @@ export fn init() void {
 
     // start loading the skeleton and animation files
     _ = sokol.fetch.send(.{
-        .path = "media/bin/pab_skeleton.ozz",
+        .path = "pab_skeleton.ozz",
         .callback = skeleton_data_loaded,
         .buffer = sokol.fetch.asRange(&skel_data_buffer),
     });
 
     _ = sokol.fetch.send(.{
-        .path = "media/bin/pab_crossarms.ozz",
+        .path = "pab_crossarms.ozz",
         .callback = animation_data_loaded,
         .buffer = sokol.fetch.asRange(&anim_data_buffer),
     });
@@ -163,7 +162,7 @@ export fn skeleton_data_loaded(response: [*c]const sokol.fetch.Response) void {
     if (response.*.fetched) {
         if (c.OZZ_load_skeleton(state.ozz, response.*.data.ptr, response.*.data.size)) {
             const num_joints = c.OZZ_num_joints(state.ozz);
-            var skeleton = Skeleton.init(std.heap.page_allocator, num_joints) catch unreachable;
+            var skeleton = Skeleton.init(std.heap.c_allocator, num_joints) catch unreachable;
             const parents = c.OZZ_joint_parents(state.ozz);
             const names: [*]const [*:0]const u8 = @ptrCast(c.OZZ_joint_names(state.ozz));
             for (0..num_joints) |i| {

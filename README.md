@@ -7,25 +7,34 @@ zig cc build
 ------------
 
 ```
-$ zig build -Dcpp_samples -l
+> zig build -Dcpp_samples -l
 ```
 
-ozz_wrap(c wraper)
-------------------
+ozz_wrap(c wrapper)
+-------------------
 
 ```
-$ zig build
+> zig build
 
-$ zig build -Dozz_wrap_samples -l
+> zig build -Dozz_wrap_samples -l
 
-$ zig build -Dozz_wrap_samples run-ozz_wrap-millipede
+> zig build -Dozz_wrap_samples run-ozz_wrap-millipede
 ```
 
-ozz_wrap(c wraper) wasm
------------------------
+ozz_wrap(c wrapper) wasm
+------------------------
 
 ```
-$ zig build -Dwasm32-emscripten
+> zig build -Dwasm32-emscripten
+
+> zig build -Dwasm32-emscripten -Dozz_wrap_samples
+
+> fd wasm zig-out
+zig-out\web\millipede.wasm
+zig-out\web\millipede.wasm.map
+zig-out\web\ozz_wrap.wasm
+zig-out\web\playback.wasm
+zig-out\web\playback.wasm.map
 ```
 
 open source c++ 3d skeletal animation library and toolset

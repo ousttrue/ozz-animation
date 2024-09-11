@@ -13,9 +13,14 @@
             .url = "git+https://github.com/ousttrue/rowmath.git#8fa39ee154ecbb87124cacc0992e6b141cdda0bc",
             .hash = "122079b19da46fe96044cafb0b88c03216b5502b10670bdacecf84df312c14a68eb9",
         },
+        // .sokol = .{
+        //     .url = "git+https://github.com/floooh/sokol-zig.git#7a1f685a29f7dbfe8ce0fe23871d01d5b29a6d0e",
+        //     .hash = "1220fd8800b4fe7a38d4778b8288f55eb451c8167b200c02e73068244d9ccefe3395",
+        // },
+        // -fPIC
         .sokol = .{
-            .url = "git+https://github.com/floooh/sokol-zig.git#7a1f685a29f7dbfe8ce0fe23871d01d5b29a6d0e",
-            .hash = "1220fd8800b4fe7a38d4778b8288f55eb451c8167b200c02e73068244d9ccefe3395",
+            .url = "git+https://github.com/ousttrue/sokol-zig.git#38014bc673fd3c82f44612f02573d5af00dfc66f",
+            .hash = "12205b36041f858db146628cd3b25fae4cda5f161a6a52d48fa22cde0c03b689ccb8",
         },
         .cimgui = .{
             .url = "git+https://github.com/cimgui/cimgui.git#1.90.7dock",
@@ -24,6 +29,10 @@
         .imgui = .{
             .url = "git+https://github.com/ocornut/imgui.git#v1.90.7-docking",
             .hash = "122087d4c571d9054c9bc0ba3d006a3ad5f0026a0d0d33febd95393c890c63042db0",
+        },
+        .@"emsdk-zig" = .{
+            .url = "git+https://github.com/ousttrue/emsdk-zig.git#4b3df5dc7824514a3ef99c1dee77ee3087019050",
+            .hash = "122062b769fe74a24375a9409bce954bdd378f79b4b9fd2adf7a23360634cf5ad55c",
         },
     },
     .paths = .{

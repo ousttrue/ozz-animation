@@ -1,8 +1,10 @@
 const std = @import("std");
 
 pub const SokolLib = struct {
+    sokol_dep: *std.Build.Dependency,
     sokol_lib: *std.Build.Step.Compile,
     sokol_mod: *std.Build.Module,
+    cimgui_dep: *std.Build.Dependency,
     cimgui_mod: *std.Build.Module,
     sokol_includes: std.ArrayList([]const u8),
 
@@ -57,6 +59,9 @@ pub fn build(
             b.pathJoin(&.{ "imgui", "imgui_tables.cpp" }),
             b.pathJoin(&.{ "imgui", "imgui_demo.cpp" }),
         },
+        .flags = &.{
+            "-fPIC",
+        },
     });
     sokol_lib.addCSourceFile(.{
         .file = b.path("custom_button_behaviour.cpp"),
@@ -82,15 +87,16 @@ pub fn build(
         .link_libc = true,
         .link_libcpp = true,
     });
-    mod_cimgui.linkLibrary(sokol_lib);
 
     var list = std.ArrayList([]const u8).init(b.allocator);
     list.append(sokol_dep.path("src/sokol/c").getPath(b)) catch unreachable;
     list.append(imgui_dep.path("").getPath(b)) catch unreachable;
 
     return .{
+        .sokol_dep = sokol_dep,
         .sokol_lib = sokol_lib,
         .sokol_mod = sokol_dep.module("sokol"),
+        .cimgui_dep = cimgui_dep,
         .cimgui_mod = mod_cimgui,
         .sokol_includes = list,
     };

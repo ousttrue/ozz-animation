@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+pub const emsdk_zig = @import("emsdk-zig");
 
 //
 // ozz-animation wrapper for zig using
@@ -114,9 +115,9 @@ pub fn writeCrossFile(
 ) std.Build.LazyPath {
     const wf = b.addWriteFiles();
     step.dependOn(&wf.step);
-    const emsdk_zig = b.dependency("emsdk-zig", .{});
-    wf.step.dependOn(emsdk_zig.builder.default_step);
-    const dep_emsdk = emsdk_zig.builder.dependency("emsdk", .{});
+    const emsdk_zig_dep = b.dependency("emsdk-zig", .{});
+    wf.step.dependOn(emsdk_zig_dep.builder.default_step);
+    const dep_emsdk = emsdk_zig_dep.builder.dependency("emsdk", .{});
     const ext: []const u8 = if (builtin.os.tag == .windows) ".bat" else "";
     return wf.add("emsdk.ini", b.fmt(
         \\# wasm.ini

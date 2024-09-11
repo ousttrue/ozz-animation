@@ -74,18 +74,30 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
-            for (ozz_wrap_sample_build.samples) |sample| {
-                const artifact = ozz_wrap_sample_dep.artifact(sample.name);
-                const install = b.addInstallArtifact(artifact, .{});
-                b.getInstallStep().dependOn(&install.step);
 
-                const run = b.addRunArtifact(artifact);
-                run.step.dependOn(&install.step);
+            if (target.result.isWasm()) {
+                // prefix/web
+                const ozz_wrap_sample_wf = ozz_wrap_sample_dep.namedWriteFiles("build");
+                b.installDirectory(.{
+                    .source_dir = ozz_wrap_sample_wf.getDirectory(),
+                    .install_dir = .{ .prefix = void{} },
+                    .install_subdir = "",
+                });
+            } else {
+                // prefix/bin
+                for (ozz_wrap_sample_build.samples) |sample| {
+                    const artifact = ozz_wrap_sample_dep.artifact(sample.name);
+                    const install = b.addInstallArtifact(artifact, .{});
+                    b.getInstallStep().dependOn(&install.step);
 
-                b.step(b.fmt("run-ozz_wrap-{s}", .{sample.name}), b.fmt(
-                    "Run ozz_wrap sample {s}",
-                    .{sample.name},
-                )).dependOn(&run.step);
+                    const run = b.addRunArtifact(artifact);
+                    run.step.dependOn(&install.step);
+
+                    b.step(b.fmt("run-ozz_wrap-{s}", .{sample.name}), b.fmt(
+                        "Run ozz_wrap sample {s}",
+                        .{sample.name},
+                    )).dependOn(&run.step);
+                }
             }
         }
     }
