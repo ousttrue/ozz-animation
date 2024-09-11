@@ -6,6 +6,14 @@
             .url = "git+https://github.com/ousttrue/emsdk-zig.git#4b3df5dc7824514a3ef99c1dee77ee3087019050",
             .hash = "122062b769fe74a24375a9409bce954bdd378f79b4b9fd2adf7a23360634cf5ad55c",
         },
+        .@"sokol-tools-bin" = .{
+            .url = "git+https://github.com/floooh/sokol-tools-bin.git#8cc8c257380c9a5e230a84aeebf09cd500903fbc",
+            .hash = "12200f5129c997728160ab584adcc939b9dbca6f802d7273f386dad777de85e80421",
+        },
+        .rowmath = .{
+            .url = "git+https://github.com/ousttrue/rowmath.git#465b3a49db61392de27a1033a2351baad3c7dd53",
+            .hash = "12200970e5310daa620ad128f1f47fda835f66cf5d57f9ffd531c68a5d1d1b5d54c0",
+        },
     },
     .paths = .{
         "",

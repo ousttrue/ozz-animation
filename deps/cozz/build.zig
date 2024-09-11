@@ -1,6 +1,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const shdc = @import("shdc.zig");
 pub const emsdk_zig = @import("emsdk-zig");
+
+const shaders = [_][]const u8{
+    "src/framework/bone.glsl",
+    "src/framework/joint.glsl",
+};
 
 //
 // ozz-animation wrapper for zig using
@@ -25,6 +31,20 @@ pub fn build(b: *std.Build) void {
         meson_arg,
     );
     b.default_step.dependOn(wf);
+
+    const cozz = b.addStaticLibrary(.{
+        .target = target,
+        .optimize = optimize,
+        .name = "cozz",
+        .root_source_file = b.path("src/main.zig"),
+    });
+    const install = b.addInstallArtifact(cozz, .{});
+    b.default_step.dependOn(&install.step);
+    for (shaders) |shader| {
+        const cmd_step = shdc.shdc_zig(b, target, shader);
+        cozz.step.dependOn(cmd_step);
+    }
+    cozz.addIncludePath(b.path(""));
 }
 
 fn buildToWriteFile(

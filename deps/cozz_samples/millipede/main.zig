@@ -11,8 +11,8 @@ const MouseCamera = rowmath.MouseCamera;
 const Mat4 = rowmath.Mat4;
 const Vec3 = rowmath.Vec3;
 const Quat = rowmath.Quat;
-const utils = @import("utils");
-const Skeleton = utils.Skeleton;
+const cozz = @import("cozz");
+const Skeleton = cozz.framework.Skeleton;
 
 const slice_count_ = 26;
 
@@ -77,7 +77,7 @@ const state = struct {
     var camera: MouseCamera = .{};
     var ozz: ?*c.ozz_t = null;
     var pass_action = sg.PassAction{};
-    var ozz_state = utils.State{};
+    var ozz_state = cozz.framework.State{};
 };
 
 export fn init() void {
@@ -93,7 +93,7 @@ export fn init() void {
         .sample_count = sokol.app.sampleCount(),
         .logger = .{ .func = sokol.log.func },
     });
-    utils.gl_init();
+    cozz.framework.gl_init();
 
     // setup sokol-imgui
     sokol.imgui.setup(.{ .logger = .{ .func = sokol.log.func } });
@@ -446,16 +446,16 @@ export fn frame() void {
         .delta_time = state.ozz_state.time.frame,
         .dpi_scale = sokol.app.dpiScale(),
     });
-    utils.draw_ui(&state.ozz_state, &state.camera.camera);
+    cozz.framework.draw_ui(&state.ozz_state, &state.camera.camera);
 
     // draw axis & grid
-    utils.gl_begin(.{
+    cozz.framework.gl_begin(.{
         .view = state.camera.camera.transform.worldToLocal(),
         .projection = state.camera.camera.projection_matrix,
     });
-    utils.draw_axis();
-    utils.draw_grid(20, 1.0);
-    utils.gl_end();
+    cozz.framework.draw_axis();
+    cozz.framework.draw_grid(20, 1.0);
+    cozz.framework.gl_end();
 
     // render
     {
@@ -465,7 +465,7 @@ export fn frame() void {
         });
         defer sg.endPass();
 
-        utils.gl_draw();
+        cozz.framework.gl_draw();
         if (state.ozz_state.loaded.skeleton) |skeleton| {
             if (state.ozz_state.loaded.animation) {
                 const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
@@ -489,7 +489,7 @@ export fn input(e: [*c]const sokol.app.Event) void {
     if (sokol.imgui.handleEvent(e.*)) {
         return;
     }
-    utils.handle_camera_input(e, &state.input);
+    cozz.framework.handle_camera_input(e, &state.input);
 }
 
 export fn cleanup() void {

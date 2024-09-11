@@ -1,7 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const zcc = @import("zcc.zig");
-const shdc = @import("shdc.zig");
 const sokol_build = @import("build_sokol_and_imgui.zig");
 const emsdk_zig = @import("emsdk-zig");
 
@@ -35,27 +34,19 @@ pub fn build(
         sokol_lib.sokol_lib.addSystemIncludePath(emsdk_incl_path);
     }
 
-    const utils = b.addModule("utils", .{
-        .root_source_file = b.path("utils/utils.zig"),
-    });
-    const utils_shader_steps = [2]*std.Build.Step{
-        shdc.shdc_zig(b, target, "utils/bone.glsl"),
-        shdc.shdc_zig(b, target, "utils/joint.glsl"),
-    };
-
     const rowmath_dep = b.dependency("rowmath", .{
         .target = target,
         .optimize = optimize,
     });
-    const rowmath_module = rowmath_dep.module("rowmath");
-    utils.addImport("rowmath", rowmath_module);
-    utils.addImport("sokol", sokol_lib.sokol_mod);
-    utils.addImport("cimgui", sokol_lib.cimgui_mod);
 
     const cozz_dep = b.dependency("cozz", .{
         .target = target,
         .optimize = optimize,
     });
+    const cozz = cozz_dep.artifact("cozz");
+    cozz.root_module.addImport("sokol", sokol_lib.sokol_mod);
+    cozz.root_module.addImport("cimgui", sokol_lib.cimgui_mod);
+    cozz.root_module.addImport("rowmath", rowmath_dep.module("rowmath"));
 
     // const root = b.path("../..");
     if (target.result.isWasm()) {
@@ -67,8 +58,6 @@ pub fn build(
                 optimize,
                 cozz_dep,
                 sokol_lib,
-                utils,
-                &utils_shader_steps,
                 rowmath_dep.module("rowmath"),
                 wf,
             );
@@ -81,8 +70,6 @@ pub fn build(
                 optimize,
                 cozz_dep,
                 sokol_lib,
-                utils,
-                &utils_shader_steps,
                 rowmath_dep.module("rowmath"),
             );
         }
@@ -105,8 +92,6 @@ pub const Sample = struct {
         optimize: std.builtin.OptimizeMode,
         cozz_dep: *std.Build.Dependency,
         sokol: sokol_build.SokolLib,
-        utils: *std.Build.Module,
-        utils_shader_steps: []const *std.Build.Step,
         rowmath_module: *std.Build.Module,
     ) void {
         const exe = b.addExecutable(.{
@@ -116,13 +101,10 @@ pub const Sample = struct {
             .root_source_file = if (self.zig_root_source) |src| b.path(src) else null,
         });
         exe.addIncludePath(b.path("cozz_samples"));
-        exe.root_module.addImport("utils", utils);
-        for (utils_shader_steps) |shader_step| {
-            exe.step.dependOn(shader_step);
-        }
-
         exe.addIncludePath(b.path(""));
         exe.addIncludePath(cozz_dep.path(""));
+        exe.root_module.addImport("cozz", &cozz_dep.artifact("cozz").root_module);
+        exe.step.dependOn(&cozz_dep.artifact("cozz").step);
         sokol.inject_zig(exe);
 
         // c
@@ -171,8 +153,6 @@ pub const Sample = struct {
         optimize: std.builtin.OptimizeMode,
         cozz_dep: *std.Build.Dependency,
         sokol: sokol_build.SokolLib,
-        utils: *std.Build.Module,
-        utils_shader_steps: []const *std.Build.Step,
         rowmath_module: *std.Build.Module,
         wf: *std.Build.Step.WriteFile,
     ) void {
@@ -186,14 +166,13 @@ pub const Sample = struct {
             .pic = true,
         });
         lib.addIncludePath(b.path("cozz_samples"));
-        lib.root_module.addImport("utils", utils);
-        for (utils_shader_steps) |shader_step| {
-            lib.step.dependOn(shader_step);
-        }
-
         lib.addIncludePath(b.path(""));
         lib.addIncludePath(cozz_dep.path(""));
         sokol.inject_zig(lib);
+
+        const cozz = cozz_dep.artifact("cozz");
+        lib.root_module.addImport("cozz", &cozz.root_module);
+        lib.step.dependOn(&cozz.step);
 
         // c
         lib.addCSourceFiles(.{

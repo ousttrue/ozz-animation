@@ -46,12 +46,14 @@ pub fn shdc_zig(
     const glsl = if (target.result.isDarwin()) "glsl410" else "glsl430";
     const slang = glsl ++ ":metal_macos:hlsl5:glsl300es:wgsl";
 
+    const shader_path = b.path(shader).getPath(b);
+
     return &b.addSystemCommand(&.{
         shdc_path,
         "-i",
-        shader,
+        shader_path,
         "-o",
-        b.fmt("{s}.zig", .{shader}),
+        b.fmt("{s}.zig", .{shader_path}),
         "-l",
         slang,
         "-f",
