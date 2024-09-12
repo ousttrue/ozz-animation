@@ -32,6 +32,7 @@
 
 #include "ozz/animation/runtime/export.h"
 #include "ozz/animation/runtime/skeleton.h"
+#include "ozz/animation/runtime/skeleton_utils.h"
 #include "ozz/base/maths/transform.h"
 
 namespace ozz {

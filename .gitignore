@@ -1,3 +1,25 @@
 build/
 build-cc/
 .DS_Store
+
+# meson tmp
+Makefile
+prefix
+prefix_*
+
+# zig
+.zig-cache
+zig-cache
+zig-out
+# clangd
+.cache
+builddir
+compile_commands.json
+# sokol
+*.glsl.h
+*.glsl.zig
+
+node_modules/
+dist/
+
+public/wasm/

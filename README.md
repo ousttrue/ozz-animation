@@ -3,6 +3,40 @@
 ozz-animation
 =============
 
+zig cc build
+------------
+
+```
+> zig build -Dcpp_samples -l
+```
+
+cozz(c wrapper)
+-------------------
+
+```
+> zig build
+
+> zig build -Dcozzples -l
+
+> zig build -Dcozzples run-cozz-millipede
+```
+
+cozz(c wrapper) wasm
+------------------------
+
+```
+> zig build -Dwasm32-emscripten
+
+> zig build -Dwasm32-emscripten -Dcozzples
+
+> fd wasm zig-out
+zig-out\web\millipede.wasm
+zig-out\web\millipede.wasm.map
+zig-out\web\cozz.wasm
+zig-out\web\playback.wasm
+zig-out\web\playback.wasm.map
+```
+
 open source c++ 3d skeletal animation library and toolset
 ---------------------------------------------------------
 

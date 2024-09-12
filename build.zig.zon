@@ -1,0 +1,37 @@
+.{
+    .name = "ozz-animation",
+    .version = "0.15.0",
+    .dependencies = .{
+        .cpp_samples = .{
+            .path = "deps/cpp_samples",
+        },
+        .cozz = .{
+            .path = "deps/cozz",
+        },
+        .cozz_samples = .{
+            .path = "deps/cozz_samples",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "include",
+        "samples",
+        "media",
+        "cozz.cpp",
+        "cozz.h",
+        "cozz_samples",
+        "meson.build",
+        "meson_options.txt",
+        //
+        "CLib.zig",
+        "build_framework.zig",
+        "build_glfw.zig",
+        "build_ozz.zig",
+        "build_samples.zig",
+        "build_sokol_and_imgui.zig",
+        "shdc.zig",
+        "zcc.zig",
+    },
+}

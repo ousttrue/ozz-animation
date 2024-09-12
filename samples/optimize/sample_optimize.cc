@@ -52,10 +52,10 @@
 
 // Skeleton and animation file can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton, "Path to the runtime skeleton file.",
-                           "media/skeleton.ozz", false)
+                           "media/bin/pab_skeleton.ozz", false)
 
 OZZ_OPTIONS_DECLARE_STRING(animation, "Path to the raw animation file.",
-                           "media/animation_raw.ozz", false)
+                           "media/bin/pab_atlas_raw.ozz", false)
 
 class OptimizeSampleApplication : public ozz::sample::Application {
  public:

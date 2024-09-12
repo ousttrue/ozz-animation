@@ -45,7 +45,7 @@
 // Skeleton archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton,
                            "Path to the skeleton (ozz archive format).",
-                           "media/skeleton.ozz", false)
+                           "media/bin/robot_skeleton.ozz", false)
 
 class TwoBoneIKSampleApplication : public ozz::sample::Application {
  protected:

@@ -50,22 +50,22 @@
 // Skeleton archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(skeleton,
                            "Path to the skeleton (ozz archive format).",
-                           "media/skeleton.ozz", false)
+                           "media/bin/pab_skeleton.ozz", false)
 
 // Animation archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(animation,
                            "Path to the animation (ozz archive format).",
-                           "media/animation.ozz", false)
+                           "media/bin/pab_crossarms.ozz", false)
 
 // Mesh archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(mesh,
                            "Path to the skinned mesh (ozz archive format).",
-                           "media/mesh.ozz", false)
+                           "media/bin/arnaud_mesh.ozz", false)
 
 // Mesh archive can be specified as an option.
 OZZ_OPTIONS_DECLARE_STRING(floor,
                            "Path to the floor mesh (ozz archive format).",
-                           "media/floor.ozz", false)
+                           "media/bin/floor.ozz", false)
 
 const char* kLeftJointNames[] = {"LeftUpLeg", "LeftLeg", "LeftFoot"};
 const char* kRightJointNames[] = {"RightUpLeg", "RightLeg", "RightFoot"};

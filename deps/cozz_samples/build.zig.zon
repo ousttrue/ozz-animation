@@ -1,0 +1,32 @@
+.{
+    .name = "cozz_samples",
+    .version = "0.0.0",
+    .dependencies = .{
+        .cozz = .{
+            .path = "../cozz",
+        },
+        .rowmath = .{
+            .url = "git+https://github.com/ousttrue/rowmath.git#465b3a49db61392de27a1033a2351baad3c7dd53",
+            .hash = "12200970e5310daa620ad128f1f47fda835f66cf5d57f9ffd531c68a5d1d1b5d54c0",
+        },
+        .sokol = .{
+            .url = "git+https://github.com/ousttrue/sokol-zig.git#38014bc673fd3c82f44612f02573d5af00dfc66f",
+            .hash = "12205b36041f858db146628cd3b25fae4cda5f161a6a52d48fa22cde0c03b689ccb8",
+        },
+        .cimgui = .{
+            .url = "git+https://github.com/cimgui/cimgui.git#1.90.7dock",
+            .hash = "1220820e37db28faf8008f091ad3c31ceffc9e61b8dc57a3a11b5671b6446df7e1bd",
+        },
+        .imgui = .{
+            .url = "git+https://github.com/ocornut/imgui.git#v1.90.7-docking",
+            .hash = "122087d4c571d9054c9bc0ba3d006a3ad5f0026a0d0d33febd95393c890c63042db0",
+        },
+        .@"emsdk-zig" = .{
+            .url = "git+https://github.com/ousttrue/emsdk-zig.git#4b3df5dc7824514a3ef99c1dee77ee3087019050",
+            .hash = "122062b769fe74a24375a9409bce954bdd378f79b4b9fd2adf7a23360634cf5ad55c",
+        },
+    },
+    .paths = .{
+        "",
+    },
+}
