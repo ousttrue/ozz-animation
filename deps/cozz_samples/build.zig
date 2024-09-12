@@ -243,4 +243,8 @@ pub const samples = [_]Sample{
         .name = "millipede",
         .zig_root_source = "millipede/main.zig",
     },
+    .{
+        .name = "motion_playback",
+        .zig_root_source = "motion_playback/main.zig",
+    },
 };
