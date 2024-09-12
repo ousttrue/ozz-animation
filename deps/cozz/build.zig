@@ -43,6 +43,7 @@ pub fn build(b: *std.Build) void {
     for (shaders) |shader| {
         const cmd_step = shdc.shdc_zig(b, target, shader);
         cozz.step.dependOn(cmd_step);
+        wf.dependOn(cmd_step);
     }
     cozz.addIncludePath(b.path(""));
 }
