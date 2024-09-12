@@ -32,20 +32,27 @@ pub fn build(b: *std.Build) void {
     );
     b.default_step.dependOn(wf);
 
-    const cozz = b.addStaticLibrary(.{
+    // TODO:
+    for (shaders) |shader| {
+        const cmd_step = shdc.shdc_zig(b, target, shader);
+        wf.dependOn(cmd_step);
+    }
+}
+
+pub fn buildCozzLib(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    cozz_dep: *std.Build.Dependency,
+) *std.Build.Step.Compile {
+    const lib = b.addStaticLibrary(.{
         .target = target,
         .optimize = optimize,
         .name = "cozz",
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = cozz_dep.path("src/main.zig"),
     });
-    const install = b.addInstallArtifact(cozz, .{});
-    b.default_step.dependOn(&install.step);
-    for (shaders) |shader| {
-        const cmd_step = shdc.shdc_zig(b, target, shader);
-        cozz.step.dependOn(cmd_step);
-        wf.dependOn(cmd_step);
-    }
-    cozz.addIncludePath(b.path(""));
+    lib.addIncludePath(cozz_dep.path(""));
+    return lib;
 }
 
 fn buildToWriteFile(

@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 const zcc = @import("zcc.zig");
 const sokol_build = @import("build_sokol_and_imgui.zig");
 const emsdk_zig = @import("emsdk-zig");
+const cozz_build = @import("cozz");
 
 const debug_flags = [_][]const u8{
     "-sASSERTIONS",
@@ -43,10 +44,11 @@ pub fn build(
         .target = target,
         .optimize = optimize,
     });
-    const cozz = cozz_dep.artifact("cozz");
-    cozz.root_module.addImport("sokol", sokol_lib.sokol_mod);
-    cozz.root_module.addImport("cimgui", sokol_lib.cimgui_mod);
-    cozz.root_module.addImport("rowmath", rowmath_dep.module("rowmath"));
+
+    const cozz_lib = cozz_build.buildCozzLib(b, target, optimize, cozz_dep);
+    cozz_lib.root_module.addImport("sokol", sokol_lib.sokol_mod);
+    cozz_lib.root_module.addImport("cimgui", sokol_lib.cimgui_mod);
+    cozz_lib.root_module.addImport("rowmath", rowmath_dep.module("rowmath"));
 
     // const root = b.path("../..");
     if (target.result.isWasm()) {
@@ -57,6 +59,7 @@ pub fn build(
                 target,
                 optimize,
                 cozz_dep,
+                cozz_lib,
                 sokol_lib,
                 rowmath_dep.module("rowmath"),
                 wf,
@@ -69,6 +72,7 @@ pub fn build(
                 target,
                 optimize,
                 cozz_dep,
+                cozz_lib,
                 sokol_lib,
                 rowmath_dep.module("rowmath"),
             );
@@ -91,6 +95,7 @@ pub const Sample = struct {
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
         cozz_dep: *std.Build.Dependency,
+        cozz_lib: *std.Build.Step.Compile,
         sokol: sokol_build.SokolLib,
         rowmath_module: *std.Build.Module,
     ) void {
@@ -102,9 +107,7 @@ pub const Sample = struct {
         });
         exe.addIncludePath(b.path("cozz_samples"));
         exe.addIncludePath(b.path(""));
-        exe.addIncludePath(cozz_dep.path(""));
-        exe.root_module.addImport("cozz", &cozz_dep.artifact("cozz").root_module);
-        exe.step.dependOn(&cozz_dep.artifact("cozz").step);
+        exe.root_module.addImport("cozz", &cozz_lib.root_module);
         sokol.inject_zig(exe);
 
         // c
@@ -152,6 +155,7 @@ pub const Sample = struct {
         target: std.Build.ResolvedTarget,
         optimize: std.builtin.OptimizeMode,
         cozz_dep: *std.Build.Dependency,
+        cozz_lib: *std.Build.Step.Compile,
         sokol: sokol_build.SokolLib,
         rowmath_module: *std.Build.Module,
         wf: *std.Build.Step.WriteFile,
@@ -167,12 +171,8 @@ pub const Sample = struct {
         });
         lib.addIncludePath(b.path("cozz_samples"));
         lib.addIncludePath(b.path(""));
-        lib.addIncludePath(cozz_dep.path(""));
         sokol.inject_zig(lib);
-
-        const cozz = cozz_dep.artifact("cozz");
-        lib.root_module.addImport("cozz", &cozz.root_module);
-        lib.step.dependOn(&cozz.step);
+        lib.root_module.addImport("cozz", &cozz_lib.root_module);
 
         // c
         lib.addCSourceFiles(.{

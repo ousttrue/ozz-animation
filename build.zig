@@ -45,8 +45,6 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
             });
 
-        b.installArtifact(ozz_dep.artifact("cozz"));
-
         // meson build is not artifact.
         // so use namedWriteFiles.
         const cozz_wf = ozz_dep.namedWriteFiles("build");

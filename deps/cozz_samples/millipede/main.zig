@@ -1,7 +1,4 @@
 const std = @import("std");
-const c = @cImport({
-    @cInclude("cozz.h");
-});
 const sokol = @import("sokol");
 const sg = sokol.gfx;
 const cimgui = @import("cimgui");
@@ -75,13 +72,13 @@ const kPrecomputedKeys = [_]TranslationKey{
 const state = struct {
     var input: InputState = .{};
     var camera: MouseCamera = .{};
-    var ozz: ?*c.ozz_t = null;
+    var ozz: ?*cozz.ozz_t = null;
     var pass_action = sg.PassAction{};
     var ozz_state = cozz.framework.State{};
 };
 
 export fn init() void {
-    state.ozz = c.OZZ_init();
+    state.ozz = cozz.OZZ_init();
     state.ozz_state.time.factor = 1.0;
 
     // setup sokol-gfx
@@ -150,7 +147,7 @@ fn create_skeleton() void {
     var fba = std.heap.FixedBufferAllocator.init(&buffer);
     var currentList = Current.init(fba.allocator());
 
-    const _root = c.OZZ_raw_skeleton_add_trs(
+    const _root = cozz.OZZ_raw_skeleton_add_trs(
         state.ozz,
         null,
         "root",
@@ -170,7 +167,7 @@ fn create_skeleton() void {
             const translation = kTransUp;
             const rotation = kRotLeftUp;
             const scale = Vec3.one;
-            lu = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            lu = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &root[0],
                 &name[0],
@@ -188,7 +185,7 @@ fn create_skeleton() void {
             const translation = kTransDown;
             const rotation = kRotLeftDown;
             const scale = Vec3.one;
-            ld = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            ld = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &lu[0],
                 &name[0],
@@ -206,7 +203,7 @@ fn create_skeleton() void {
             const translation = Vec3.right;
             const rotation = Quat.identity;
             const scale = Vec3.one;
-            lf = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            lf = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &ld[0],
                 &name[0],
@@ -224,7 +221,7 @@ fn create_skeleton() void {
             const translation = kTransUp;
             const rotation = kRotRightUp;
             const scale = Vec3.one;
-            ru = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            ru = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &root[0],
                 &name[0],
@@ -242,7 +239,7 @@ fn create_skeleton() void {
             const translation = kTransDown;
             const rotation = kRotRightDown;
             const scale = Vec3.one;
-            rd = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            rd = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &ru[0],
                 &name[0],
@@ -260,7 +257,7 @@ fn create_skeleton() void {
             const translation = Vec3.right;
             const rotation = Quat.identity;
             const scale = Vec3.one;
-            rf = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            rf = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &rd[0],
                 &name[0],
@@ -278,7 +275,7 @@ fn create_skeleton() void {
             const translation = Vec3{ .x = 0.0, .y = 0.0, .z = kSpinLength };
             const rotation = Quat.identity;
             const scale = Vec3.one;
-            sp = @ptrCast(c.OZZ_raw_skeleton_add_trs(
+            sp = @ptrCast(cozz.OZZ_raw_skeleton_add_trs(
                 state.ozz,
                 &root[0],
                 &name[0],
@@ -293,7 +290,7 @@ fn create_skeleton() void {
 }
 
 fn create_animation(skeleton: Skeleton) void {
-    c.OZZ_raw_animation(state.ozz, kDuration, skeleton.joints.len);
+    cozz.OZZ_raw_animation(state.ozz, kDuration, skeleton.joints.len);
 
     for (skeleton.joints, 0..) |joint, i| {
         // RawAnimation::JointTrack& track = _animation->tracks[i];
@@ -335,59 +332,59 @@ fn create_animation(skeleton: Skeleton) void {
 
                 if (left) {
                     const tkey = kTransDown.add(rkey.value);
-                    c.OZZ_track_push_translation(state.ozz, i, new_time, &tkey.x);
+                    cozz.OZZ_track_push_translation(state.ozz, i, new_time, &tkey.x);
                 } else {
                     const tkey = Vec3{
                         .x = kTransDown.x - rkey.value.x,
                         .y = kTransDown.y + rkey.value.y,
                         .z = kTransDown.z + rkey.value.z,
                     };
-                    c.OZZ_track_push_translation(state.ozz, i, new_time, &tkey.x);
+                    cozz.OZZ_track_push_translation(state.ozz, i, new_time, &tkey.x);
                 }
             }
 
             // Pushes rotation key-frame.
             if (left) {
                 const rkey = kRotLeftDown;
-                c.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
+                cozz.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
             } else {
                 const rkey = kRotRightDown;
-                c.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
+                cozz.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
             }
         } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "lu")) {
             const tkey = kTransUp;
-            c.OZZ_track_push_translation(state.ozz, i, 0, &tkey.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, 0, &tkey.x);
             const rkey = kRotLeftUp;
-            c.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
+            cozz.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
         } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "ru")) {
             const tkey0 = kTransUp;
-            c.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
             const rkey0 = kRotRightUp;
-            c.OZZ_track_push_rotation(state.ozz, i, 0, &rkey0.x);
+            cozz.OZZ_track_push_rotation(state.ozz, i, 0, &rkey0.x);
         } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "lf")) {
             const tkey = kTransFoot;
-            c.OZZ_track_push_translation(state.ozz, i, 0, &tkey.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, 0, &tkey.x);
         } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "rf")) {
             const tkey0 = kTransFoot;
-            c.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
         } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "sp")) {
             const skey = Vec3{ .x = 0.0, .y = 0.0, .z = kSpinLength };
-            c.OZZ_track_push_translation(state.ozz, i, 0, &skey.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, 0, &skey.x);
             const rkey = Quat.identity;
-            c.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
+            cozz.OZZ_track_push_rotation(state.ozz, i, 0, &rkey.x);
         } else if (std.mem.startsWith(u8, std.mem.span(joint.name), "root")) {
             const tkey0 = Vec3{
                 .x = 0.0,
                 .y = 1.0,
                 .z = -slice_count_ * kSpinLength,
             };
-            c.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, 0, &tkey0.x);
             const tkey1 = Vec3{
                 .x = 0.0,
                 .y = 1.0,
                 .z = kWalkCycleCount * kWalkCycleLength + tkey0.z,
             };
-            c.OZZ_track_push_translation(state.ozz, i, kDuration, &tkey1.x);
+            cozz.OZZ_track_push_translation(state.ozz, i, kDuration, &tkey1.x);
         }
     }
 }
@@ -397,23 +394,23 @@ fn build() void {
     // Initializes the root. The root pointer will change from a spine to the
     // next for each slice.
     create_skeleton();
-    // const num_joints = c.OZZ_raw_num_joints(state.ozz);
+    // const num_joints = cozz.OZZ_raw_num_joints(state.ozz);
 
     // Build the run time skeleton.
-    if (!c.OZZ_raw_build(state.ozz)) {
+    if (!cozz.OZZ_raw_build(state.ozz)) {
         @panic("OZZ_raw_build");
     }
-    const num_joints = c.OZZ_num_joints(state.ozz);
+    const num_joints = cozz.OZZ_num_joints(state.ozz);
     // std.debug.print("create {}!\n", .{num_joints});
     var skeleton = Skeleton.init(std.heap.c_allocator, num_joints) catch unreachable;
-    const parents = c.OZZ_joint_parents(state.ozz);
-    const names: [*]const [*:0]const u8 = @ptrCast(c.OZZ_joint_names(state.ozz));
+    const parents = cozz.OZZ_joint_parents(state.ozz);
+    const names: [*]const [*:0]const u8 = @ptrCast(cozz.OZZ_joint_names(state.ozz));
     for (0..num_joints) |i| {
         const parent: u16 = parents[i];
         skeleton.joints[i] = .{
             .name = names[i],
             .parent = if (std.math.maxInt(u16) != parent) parent else null,
-            .is_leaf = c.OZZ_joint_is_leaf(state.ozz, i),
+            .is_leaf = cozz.OZZ_joint_is_leaf(state.ozz, i),
         };
     }
     state.ozz_state.loaded.skeleton = skeleton;
@@ -422,7 +419,7 @@ fn build() void {
     // RawAnimation raw_animation;
     create_animation(skeleton);
     // Build the run time animation from the raw animation.
-    if (!c.OZZ_animation_build(state.ozz)) {
+    if (!cozz.OZZ_animation_build(state.ozz)) {
         @panic("OZZ_animation_build");
     }
     state.ozz_state.loaded.animation = true;
@@ -468,12 +465,12 @@ export fn frame() void {
         cozz.framework.gl_draw();
         if (state.ozz_state.loaded.skeleton) |skeleton| {
             if (state.ozz_state.loaded.animation) {
-                const anim_ratio = state.ozz_state.update(c.OZZ_duration(state.ozz));
+                const anim_ratio = state.ozz_state.update(cozz.OZZ_duration(state.ozz));
                 // const anim_duration = ;
-                c.OZZ_eval_animation(state.ozz, anim_ratio);
+                cozz.OZZ_eval_animation(state.ozz, anim_ratio);
             }
 
-            const matrices: [*]const Mat4 = @ptrCast(c.OZZ_model_matrices(state.ozz));
+            const matrices: [*]const Mat4 = @ptrCast(cozz.OZZ_model_matrices(state.ozz));
             skeleton.draw(
                 state.camera.viewProjectionMatrix(),
                 matrices,
@@ -497,7 +494,7 @@ export fn cleanup() void {
     sokol.gl.shutdown();
     sg.shutdown();
 
-    c.OZZ_shutdown(state.ozz);
+    cozz.OZZ_shutdown(state.ozz);
     state.ozz = null;
 }
 
