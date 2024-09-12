@@ -26,6 +26,7 @@ pub fn build(
             "src/base/maths/math_archive.cc",
             "src/base/maths/soa_math_archive.cc",
             "src/base/maths/simd_math_archive.cc",
+            "src/base/encode/group_varint.cc",
             "src/animation/runtime/animation.cc",
             "src/animation/runtime/animation_utils.cc",
             "src/animation/runtime/blending_job.cc",
