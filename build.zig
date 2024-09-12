@@ -1,5 +1,7 @@
 const std = @import("std");
 const name = "cozz";
+const cozz_build = @import("cozz");
+pub const buildCozzLib = cozz_build.buildCozzLib;
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
