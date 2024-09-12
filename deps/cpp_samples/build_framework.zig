@@ -27,6 +27,7 @@ pub fn build(
             "samples/framework/internal/renderer_impl.cc",
             "samples/framework/internal/shader.cc",
             "samples/framework/internal/shooter.cc",
+            "samples/framework/motion_utils.cc",
         },
     });
     lib.addIncludePath(root.path(b, "extern/glfw/include"));

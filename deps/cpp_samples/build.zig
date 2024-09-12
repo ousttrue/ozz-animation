@@ -51,7 +51,10 @@ pub const Sample = struct {
     name: []const u8,
     cfiles: []const []const u8,
     includes: []const []const u8 = &.{},
-    windows_libs: []const []const u8 = &.{},
+    windows_libs: []const []const u8 = &.{
+        "OpenGL32",
+        "Gdi32",
+    },
     sokol_shader: ?[]const u8 = null,
     use_gtest: bool = false,
 };
@@ -60,115 +63,72 @@ pub const samples = [_]Sample{
     .{
         .name = "playback",
         .cfiles = &.{"samples/playback/sample_playback.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "attach",
         .cfiles = &.{"samples/attach/sample_attach.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "blend",
         .cfiles = &.{"samples/blend/sample_blend.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "partial_blend",
         .cfiles = &.{"samples/partial_blend/sample_partial_blend.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "additive",
         .cfiles = &.{"samples/additive/sample_additive.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "baked",
         .cfiles = &.{"samples/baked/sample_baked.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "user_channel",
         .cfiles = &.{"samples/user_channel/sample_user_channel.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "optimize",
         .cfiles = &.{"samples/optimize/sample_optimize.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "millipede",
         .cfiles = &.{"samples/millipede/sample_millipede.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "two_bone_ik",
         .cfiles = &.{"samples/two_bone_ik/sample_two_bone_ik.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "look_at",
         .cfiles = &.{"samples/look_at/sample_look_at.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "foot_ik",
         .cfiles = &.{"samples/foot_ik/sample_foot_ik.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
     .{
         .name = "skinning",
         .cfiles = &.{"samples/skinning/sample_skinning.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
+    },
+
+    .{
+        .name = "motion_extraction",
+        .cfiles = &.{"samples/motion_extraction/sample_motion_extraction.cc"},
+    },
+    .{
+        .name = "motion_playback",
+        .cfiles = &.{"samples/motion_playback/sample_motion_playback.cc"},
+    },
+    .{
+        .name = "motion_blend",
+        .cfiles = &.{"samples/motion_blend/sample_motion_blend.cc"},
     },
 
     .{
         .name = "multithread",
         .cfiles = &.{"samples/multithread/sample_multithread.cc"},
-        .windows_libs = &.{
-            "OpenGL32",
-            "Gdi32",
-        },
     },
 
     // tool

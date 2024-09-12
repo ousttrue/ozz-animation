@@ -39,6 +39,7 @@ pub fn build(
             "src/animation/runtime/track.cc",
             "src/animation/runtime/track_sampling_job.cc",
             "src/animation/runtime/track_triggering_job.cc",
+            "src/animation/runtime/motion_blending_job.cc",
             "src/animation/offline/raw_animation.cc",
             "src/animation/offline/raw_animation_archive.cc",
             "src/animation/offline/raw_animation_utils.cc",
@@ -49,8 +50,10 @@ pub fn build(
             "src/animation/offline/raw_skeleton_archive.cc",
             "src/animation/offline/skeleton_builder.cc",
             "src/animation/offline/raw_track.cc",
+            "src/animation/offline/raw_track_utils.cc",
             "src/animation/offline/track_builder.cc",
             "src/animation/offline/track_optimizer.cc",
+            "src/animation/offline/motion_extractor.cc",
             "src/options/options.cc",
             "src/geometry/runtime/skinning_job.cc",
 
