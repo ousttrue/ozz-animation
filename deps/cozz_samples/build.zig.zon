@@ -5,10 +5,6 @@
         .cozz = .{
             .path = "../cozz",
         },
-        .rowmath = .{
-            .url = "git+https://github.com/ousttrue/rowmath.git#465b3a49db61392de27a1033a2351baad3c7dd53",
-            .hash = "12200970e5310daa620ad128f1f47fda835f66cf5d57f9ffd531c68a5d1d1b5d54c0",
-        },
         .sokol = .{
             .url = "git+https://github.com/ousttrue/sokol-zig.git#38014bc673fd3c82f44612f02573d5af00dfc66f",
             .hash = "12205b36041f858db146628cd3b25fae4cda5f161a6a52d48fa22cde0c03b689ccb8",

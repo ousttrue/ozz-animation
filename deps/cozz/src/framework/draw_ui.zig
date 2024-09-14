@@ -1,7 +1,7 @@
 const std = @import("std");
 const cimgui = @import("cimgui");
 const rowmath = @import("rowmath");
-const Camera = rowmath.Camera;
+const OrbitCamera = rowmath.OrbitCamera;
 const Skeleton = @import("Skeleton.zig");
 
 pub const Loaded = struct {
@@ -39,7 +39,7 @@ pub const State = struct {
     }
 };
 
-pub fn draw_ui(state: *State, camera: *Camera) void {
+pub fn draw_ui(state: *State, camera: *OrbitCamera) void {
     cimgui.igSetNextWindowPos(.{ .x = 20, .y = 20 }, cimgui.ImGuiCond_Once, .{ .x = 0, .y = 0 });
     cimgui.igSetNextWindowSize(.{ .x = 220, .y = 150 }, cimgui.ImGuiCond_Once);
     cimgui.igSetNextWindowBgAlpha(0.35);

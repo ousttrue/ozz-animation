@@ -35,12 +35,12 @@ pub fn build(
         sokol_lib.sokol_lib.addSystemIncludePath(emsdk_incl_path);
     }
 
-    const rowmath_dep = b.dependency("rowmath", .{
+    const cozz_dep = b.dependency("cozz", .{
         .target = target,
         .optimize = optimize,
     });
 
-    const cozz_dep = b.dependency("cozz", .{
+    const rowmath_dep = cozz_dep.builder.dependency("rowmath", .{
         .target = target,
         .optimize = optimize,
     });
