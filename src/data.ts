@@ -81,5 +81,10 @@ export const category: CategoryType = {
       title: "multithread",
       url: "https://guillaumeblanc.github.io/ozz-animation/samples/multithread/",
     },
+    //
+    {
+      title: "bvh_player",
+      url: "https://ousttrue.github.io/rowmath/",
+    },
   ],
 }

@@ -7,7 +7,7 @@ const cozz_build = @import("cozz");
 
 const debug_flags = [_][]const u8{
     "-sASSERTIONS",
-    "-g4",
+    "-gsource-map",
 };
 
 const release_flags = [_][]const u8{};
@@ -64,6 +64,11 @@ pub fn build(
                 rowmath_dep.module("rowmath"),
                 wf,
             );
+            if (sample.univrm_dep) {
+                const univrm_dep = b.dependency("univrm", .{});
+                const bvh = univrm_dep.path("Assets/VRM10_Samples/VRM10Viewer/Motions/vrm10viewer_test_motion.txt");
+                _ = wf.addCopyFile(bvh, "web/univrm.bvh");
+            }
         }
     } else {
         for (samples) |sample| {
@@ -88,6 +93,7 @@ pub const Sample = struct {
     cpp_flags: []const []const u8 = &.{},
     zig_root_source: ?[]const u8 = null,
     shader: ?[]const u8 = null,
+    univrm_dep: bool = false,
 
     fn buildNative(
         self: @This(),
@@ -246,5 +252,11 @@ pub const samples = [_]Sample{
     .{
         .name = "motion_playback",
         .zig_root_source = "motion_playback/main.zig",
+    },
+    //
+    .{
+        .name = "bvh_player",
+        .zig_root_source = "bvh_player/main.zig",
+        .univrm_dep = true,
     },
 };
