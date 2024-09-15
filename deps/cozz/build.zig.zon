@@ -11,8 +11,8 @@
             .hash = "12200f5129c997728160ab584adcc939b9dbca6f802d7273f386dad777de85e80421",
         },
         .rowmath = .{
-            .url = "git+https://github.com/ousttrue/rowmath.git#e13846f95b25a6bcdb6c4662a9bbe47a34d29c77",
-            .hash = "1220f9eb5086d71085b501a5fb2748c8ef900b9bf71a3dae58a7677840a4873dcfdf",
+            .url = "git+https://github.com/ousttrue/rowmath.git#0246badfb74d328d363a53a8d6386dbc48af687c",
+            .hash = "122040a7ca48dcaa6d56f5231905af51e41dea4cdbce4ea8536ea2a14eda83fa19cd",
         },
     },
     .paths = .{
