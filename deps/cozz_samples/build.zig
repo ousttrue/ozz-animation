@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const zcc = @import("zcc.zig");
+// const zcc = @import("zcc.zig");
 const sokol_build = @import("build_sokol_and_imgui.zig");
 const emsdk_zig = @import("emsdk-zig");
 const cozz_build = @import("cozz");
@@ -137,7 +137,7 @@ pub const Sample = struct {
         // install exe & run
         const install = b.addInstallArtifact(exe, .{});
         b.getInstallStep().dependOn(&install.step);
-        install.step.dependOn(zcc.createStep(b, .{ .targets = &.{exe} }));
+        // install.step.dependOn(zcc.createStep(b, .{ .targets = &.{exe} }));
 
         const run = b.addRunArtifact(exe);
         run.step.dependOn(&install.step);
